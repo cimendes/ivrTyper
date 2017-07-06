@@ -1,18 +1,13 @@
-import pickle
-import traceback
 import shlex
+import os
 import subprocess
 from threading import Timer
-import shutil
-import time
-import functools
-import os.path
-import sys
+
 
 def setPATHvariable(doNotUseProvidedSoftware, script_path):
     path_variable = os.environ['PATH']
     script_folder = os.path.dirname(script_path)
-    # Set path to use provided softwares
+    # Set path to use provided software
     if not doNotUseProvidedSoftware:
         bowtie2 = os.path.join(script_folder, 'src', 'bowtie2-2.2.9')
         samtools = os.path.join(script_folder, 'src', 'samtools-1.3.1', 'bin')
@@ -21,33 +16,33 @@ def setPATHvariable(doNotUseProvidedSoftware, script_path):
         os.environ['PATH'] = str(':'.join([bowtie2, samtools, bcftools, path_variable]))
 
     # Print PATH variable
-    print '\n' + 'PATH variable:'
+    print '\n' + 'PATH variable:\n'
     print os.environ['PATH']
-
 
 def getReadsFiles(workdir):
 
     sample_data={}
 
     for sample in os.listdir(workdir):
-        sample_files = os.listdir(os.path.join(workdir,sample))
+        if os.path.isdir(os.path.join(workdir,sample)):
+            sample_files = os.listdir(os.path.join(workdir,sample))
 
-        sample_file_foward = None
-        sample_file_reverse = None
+            sample_file_foward = None
+            sample_file_reverse = None
 
-        for file in sample_files:
-            if file.endswith('_R1_001.fastq.gz') or file.endswith('_1.fastq.gz') or file.endswith(
+            for file in sample_files:
+                if file.endswith('_R1_001.fastq.gz') or file.endswith('_1.fastq.gz') or file.endswith(
                    '_R1_001.fq.gz') or file.endswith('_1.fq.gz'):
-               sample_file_foward = os.path.join(workdir, sample, file)
-               # print sample_file_foward
-            elif file.endswith('_R1_002.fastq.gz') or file.endswith('_2.fastq.gz') or file.endswith(
-                '_R1_002.fq.gz') or file.endswith('_2.fq.gz'):
-                 sample_file_reverse = os.path.join(workdir, sample, file)
-                # print sample_file_reverse
-        if sample_file_foward == None or sample_file_reverse == None:
-            print 'no files found for ' + sample
-        else:
-            sample_data[sample] = [sample_file_foward,sample_file_reverse]
+                    sample_file_foward = os.path.join(workdir, sample, file)
+                    # print sample_file_foward
+                elif file.endswith('_R1_002.fastq.gz') or file.endswith('_2.fastq.gz') or file.endswith(
+                    '_R1_002.fq.gz') or file.endswith('_2.fq.gz'):
+                    sample_file_reverse = os.path.join(workdir, sample, file)
+                    # print sample_file_reverse
+            if sample_file_foward == None or sample_file_reverse == None:
+                print 'WARNING: No files found for ' + sample
+            else:
+                sample_data[sample] = [sample_file_foward,sample_file_reverse]
 
     #for key, value in sample_data.items():
     #    print key
