@@ -33,7 +33,7 @@ def ivrTyper(args):
     samples_total_number = len(sample_data)
 
     #run bowtie
-    runTyper.alignSamples(sample_data,reference,args.threads, workdir, script_path)
+    runTyper.alignSamples(sample_data,reference,args.threads, workdir, script_path, args.keepFiles)
 
     return number_samples_successfully, samples_total_number
 
@@ -50,6 +50,8 @@ def main():
     parser_optional_general.add_argument('-j', '--threads', type=int, metavar='N', help='Number of threads to use',
                                          required=False, default=1)
     parser_optional_general.add_argument('-u', '--skipProvidedSoftware', action='store_true', help='Do not use provided software',
+                                         required=False, default=False)
+    parser_optional_general.add_argument('-k', '--keepFiles', action='store_true', help='Keep alignment files',
                                          required=False, default=False)
 
     args = parser.parse_args()
@@ -72,6 +74,8 @@ def main():
     #TODO - Run time (source: ReMatCh)
     #time_taken = utils.runTime(start_time)
     #del time_taken
+
+
 
     if number_samples_successfully == 0:
         sys.exit('No samples ran successfully.')

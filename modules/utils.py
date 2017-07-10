@@ -18,6 +18,7 @@ def setPATHvariable(doNotUseProvidedSoftware, script_path):
     # Print PATH variable
     print '\n' + 'PATH variable:\n'
     print os.environ['PATH']
+    print '\n'
 
 def getReadsFiles(workdir):
 
@@ -92,3 +93,4 @@ def runCommandPopenCommunicate(command, shell_True, timeout_sec_None, print_coma
 def kill_subprocess_Popen(subprocess_Popen, command):
     print 'Command run out of time: ' + str(command)
     subprocess_Popen.kill()
+
