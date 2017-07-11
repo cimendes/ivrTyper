@@ -54,13 +54,18 @@ def typeSeq_moduleOne(files, threads, workdir, script_path):
     print "1.1 - " + str(readCount_1_1)
     print "1.2 - " + str(readCount_1_2)
 
+    new_target = None
+
     if readCount_1_1 > readCount_1_2:
-        return True, '1.1'
+        new_target = '1.1'
     elif readCount_1_1 < readCount_1_2:
-        return True, '1.2'
+        new_target = '1.2'
     else:
         print "results inconclusive"
-        return False, None
+        return False, None, None
+
+    module1={'1.1': int(readCount_1_1), '1.2': int(readCount_1_2)}
+    return True, new_target, module1
 
 def typeSeq_moduleTwo(files, threads, workdir, script_path):
     readCount_2_1 = None
@@ -80,7 +85,7 @@ def typeSeq_moduleTwo(files, threads, workdir, script_path):
                 readCount_2_1 = samfile1.mapped
     else:
         print 'Failed 2.1 Bowtie mapping'
-        return False, readCount_2_1
+        return False, None
 
     # 2.2
     runMapping, samFile2 = utils.mappingBowtie2(files, os.path.join(os.path.dirname(script_path), 'src', 'seq',
@@ -95,7 +100,7 @@ def typeSeq_moduleTwo(files, threads, workdir, script_path):
                 readCount_2_2 = samfile2.mapped
     else:
         print 'Failed 2.2 Bowtie mapping'
-        return False, readCount_2_2
+        return False, None
 
     # 2.3
     runMapping, samFile3 = utils.mappingBowtie2(files, os.path.join(os.path.dirname(script_path), 'src', 'seq',
@@ -110,21 +115,14 @@ def typeSeq_moduleTwo(files, threads, workdir, script_path):
                 readCount_2_3 = samfile3.mapped
     else:
         print 'Failed 2.3 Bowtie mapping'
-        return False, readCount_2_3
+        return False, None
 
     print "2.1 - " + str(readCount_2_1)
     print "2.2 - " + str(readCount_2_2)
     print "2.3 - " + str(readCount_2_3)
 
-    if readCount_2_1 == readCount_2_2 == readCount_2_3:
-        print "Results inconclusive"
-        return False, None
-    elif readCount_2_1 > readCount_2_2 and readCount_2_1 > readCount_2_3:
-        return True, "2.1"
-    elif readCount_2_2 > readCount_2_1 and readCount_2_2 > readCount_2_3:
-        return True, "2.2"
-    elif readCount_2_3 > readCount_2_1 and readCount_2_3 > readCount_2_2:
-        return True, "2.3"
+    module2 = {"2.1": int(readCount_2_1), "2.2": int(readCount_2_2), "2.3": int(readCount_2_3)}
+    return True, module2
 
 
 def getSeq_moduleTwo(first_type, bamfile, threads, workdir, script_path, sample):
@@ -157,8 +155,10 @@ def getSeq_moduleTwo(first_type, bamfile, threads, workdir, script_path, sample)
                                                             False, threads, False)
         utils.indexAlignment(bamFile_1_1, False)
         utils.bam2fastq(bamFile_1_1, False)
-        run, type =typeSeq_moduleTwo([bamFile_1_1 + '.fastq'], threads, workdir, script_path)
-        return run, type
+
+        run, module2 =typeSeq_moduleTwo([bamFile_1_1 + '.fastq'], threads, workdir, script_path)
+
+        return run, module2
 
     elif first_type == '1.2':
         iter = pysam_fullRef.fetch('CP000410_extraction_-_Type_I_RM_system_locus', 4462 - 1, 4861 - 1)
@@ -185,31 +185,49 @@ def getSeq_moduleTwo(first_type, bamfile, threads, workdir, script_path, sample)
                                                          False, threads, False)
         utils.indexAlignment(bamFile3, False)
         utils.bam2fastq(bamFile3, False)
-        run, type = typeSeq_moduleTwo([bamFile3 + '.fastq'], threads, workdir, script_path)
-        return run, type
+
+        run, module2 = typeSeq_moduleTwo([bamFile3 + '.fastq'], threads, workdir, script_path)
+
+        return run, module2
 
     else:
         print "this sample is untypable"
         return False, None
 
 def getType(module1, module2):
+    #TODO - implement percentage!! - confidence calling
+    #TODO - fix the bug!!!!! 0.0 in all but A
 
-    if module1 == '1.1':
-        if module2 == "2.1":
-            return "A"
-        elif module2 == "2.2":
-            return "B"
-        elif module2 == "2.3":
-            return "E"
-    elif module1 == "1.2":
-        if module2 == "2.1":
-            return "D"
-        elif module2 == "2.2":
-            return "C"
-        elif module2 == "2.3":
-            return "F"
-    else:
-        return None
+    totalReadCount = sum(module1.values() + module2.values())
+
+    #print totalReadCount
+
+    print "Typing support: "
+    #allele A
+    readPercentageA = float((module1["1.1"] + module2["2.1"])) / float(totalReadCount) * 100
+    print "allele A: {}% ({}/{} reads)\n".format(format(readPercentageA, '.2f'), (module1["1.1"] + module2["2.1"]),
+                                                 totalReadCount)
+
+    readPercentageB = (module1["1.1"] + module2["2.2"]) / totalReadCount
+    print "allele B: {}% ({}/{} reads)\n".format(format(readPercentageB, '.2f'), (module1["1.1"] + module2["2.2"]),
+                                                 totalReadCount)
+
+    readPercentageC = (module1["1.2"] + module2["2.2"]) / totalReadCount
+    print "allele C: {}% ({}/{} reads)\n".format(format(readPercentageC, '.2f'), (module1["1.1"] + module2["2.1"]),
+                                                 totalReadCount)
+
+    readPercentageD = (module1["1.2"] + module2["2.1"]) / totalReadCount
+    print "allele D: {}% ({}/{} reads)\n".format(format(readPercentageD, '.2f'), (module1["1.1"] + module2["2.1"]),
+                                                 totalReadCount)
+
+    readPercentageE = (module1["1.1"] + module2["2.3"]) / totalReadCount
+    print "allele E: {}% ({}/{} reads)\n".format(format(readPercentageE, '.2f'), (module1["1.1"] + module2["2.1"]),
+                                                 totalReadCount)
+
+    readPercentageF = (module1["1.2"] + module2["2.3"]) / totalReadCount
+    print "allele F: {}% ({}/{} reads)\n".format(format(readPercentageF, '.2f'), (module1["1.1"] + module2["2.1"]),
+                                                 totalReadCount)
+
 
 
 def alignSamples(sampleFiles, reference, threads, workdir, script_path, keepFiles):
@@ -259,17 +277,18 @@ def alignSamples(sampleFiles, reference, threads, workdir, script_path, keepFile
                                                            False, threads, False)
                     utils.indexAlignment(bam_matepairs, False)
                     utils.bam2fastq(bam_matepairs, False)
-                    success1, first_unit = typeSeq_moduleOne([bam_matepairs+'.fastq'], threads, newWorkdir, script_path)
+                    success1, newTarget, module1 = typeSeq_moduleOne([bam_matepairs+'.fastq'], threads, newWorkdir,
+                                                              script_path)
 
-                    success2, second_unit = getSeq_moduleTwo(first_unit, bamFile_fullRef, threads, newWorkdir,
+                    success2, module2 = getSeq_moduleTwo(newTarget, bamFile_fullRef, threads, newWorkdir,
                                                              script_path, sample)
 
                     if success1 and success2:
-                        ivrType = getType(first_unit,second_unit)
-                        print "--> Sample has a type %s ivr locus!" % (ivrType)
-                        writeReport(workdir, sample, first_unit, second_unit, ivrType)
-                    else:
-                        print "No ivr locus found for this sample"
+                         getType(module1,module2)
+                    #    print "--> Sample has a type %s ivr locus!" % (ivrType)
+                    #    writeReport(workdir, sample, first_unit, second_unit, ivrType)
+                    #else:
+                    #    print "No ivr locus found for this sample"
 
 
         if not keepFiles:
