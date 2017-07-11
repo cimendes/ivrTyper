@@ -4,6 +4,88 @@ import subprocess
 from threading import Timer
 
 
+# Indexing reference file using Bowtie2
+def indexSequenceBowtie2(referenceFile, threads, write_command=True):
+    if os.path.isfile(str(referenceFile + '.1.bt2')):
+        run_successfully = True
+    else:
+        command = ['bowtie2-build', '--threads', str(threads), referenceFile, referenceFile]
+        run_successfully, stdout, stderr = runCommandPopenCommunicate(command, True, None, write_command)
+    return run_successfully
+
+
+# Mapping with Bowtie2
+def mappingBowtie2(fastq_files, referenceFile, threads, outdir, conserved_True, numMapLoc, bowtieOPT,
+                   write_command=True, name='alignment'):
+    sam_file = os.path.join(outdir, str(name+'.sam'))
+
+    # Index reference file
+    run_successfully = indexSequenceBowtie2(referenceFile, threads)
+
+    if run_successfully:
+        command = ['bowtie2', '-k', str(numMapLoc), '-q', '', '--threads', str(threads), '-x', referenceFile, '',
+                   '--no-unal', '', '-S', sam_file]
+
+        if len(fastq_files) == 1:
+            command[9] = '-U ' + fastq_files[0]
+        elif len(fastq_files) == 2:
+            command[9] = '-1 ' + fastq_files[0] + ' -2 ' + fastq_files[1]
+        else:
+            return False, None
+
+        if conserved_True:
+            command[4] = '--sensitive'
+        else:
+            command[4] = '--very-sensitive-local'
+
+        if bowtieOPT is not None:
+            command[11] = bowtieOPT
+
+        run_successfully, stdout, stderr = runCommandPopenCommunicate(command, False, None, write_command)
+
+    if not run_successfully:
+        sam_file = None
+
+    return run_successfully, sam_file
+
+
+def index_fasta_samtools(fasta, region_None, region_outfile_none, print_comand_true):
+    command = ['samtools', 'faidx', fasta, '', '', '']
+    shell_true = False
+    if region_None is not None:
+        command[3] = region_None
+    if region_outfile_none is not None:
+        command[4] = '>'
+        command[5] = region_outfile_none
+        shell_true = True
+    run_successfully, stdout, stderr = runCommandPopenCommunicate(command, shell_true, None, print_comand_true)
+    return run_successfully, stdout
+
+
+# Index alignment file
+def indexAlignment(alignment_file, write_command=True):
+    command = ['samtools', 'index', alignment_file]
+    run_successfully, stdout, stderr = runCommandPopenCommunicate(command, False, None, write_command)
+    return run_successfully
+
+
+# Sort alignment file
+def sortAlignment(alignment_file, output_file, sortByName_True, threads, write_command=True):
+    outFormat_string = os.path.splitext(output_file)[1][1:].lower()
+    command = ['samtools', 'sort', '-o', output_file, '-O', outFormat_string, '', '-@', str(threads), alignment_file]
+    if sortByName_True:
+        command[6] = '-n'
+    run_successfully, stdout, stderr = runCommandPopenCommunicate(command, False, None, write_command)
+    if not run_successfully:
+        output_file = None
+    return run_successfully, output_file
+
+
+def bam2fastq(bam_file, write_command=True):
+    command = ['samtools', 'fastq', bam_file, '>', bam_file+'.fastq']
+    run_successfully, stdout, stderr = runCommandPopenCommunicate(command, True, None, write_command)
+    return run_successfully
+
 def setPATHvariable(doNotUseProvidedSoftware, script_path):
     path_variable = os.environ['PATH']
     script_folder = os.path.dirname(script_path)
