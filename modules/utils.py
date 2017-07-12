@@ -10,8 +10,9 @@ def getPorpotionsModule2(module2,allele):
 def getPorpotionsModule1(module1,allele):
     return float(module1[allele]/float(module1["1.1"]+module1["1.2"]))
 
-# Indexing reference file using Bowtie2
+
 def indexSequenceBowtie2(referenceFile, threads, write_command=True):
+    # Indexing reference file using Bowtie2
     if os.path.isfile(str(referenceFile + '.1.bt2')):
         run_successfully = True
     else:
@@ -20,9 +21,10 @@ def indexSequenceBowtie2(referenceFile, threads, write_command=True):
     return run_successfully
 
 
-# Mapping with Bowtie2
 def mappingBowtie2(fastq_files, referenceFile, threads, outdir, conserved_True, numMapLoc, bowtieOPT,
                    write_command=True, name='alignment'):
+    # Mapping with Bowtie2
+
     sam_file = os.path.join(outdir, str(name+'.sam'))
 
     # Index reference file
@@ -68,15 +70,15 @@ def index_fasta_samtools(fasta, region_None, region_outfile_none, print_comand_t
     return run_successfully, stdout
 
 
-# Index alignment file
 def indexAlignment(alignment_file, write_command=True):
+    # Index alignment file
     command = ['samtools', 'index', alignment_file]
     run_successfully, stdout, stderr = runCommandPopenCommunicate(command, False, None, write_command)
     return run_successfully
 
 
-# Sort alignment file
 def sortAlignment(alignment_file, output_file, sortByName_True, threads, write_command=True):
+    # Sort alignment file
     outFormat_string = os.path.splitext(output_file)[1][1:].lower()
     command = ['samtools', 'sort', '-o', output_file, '-O', outFormat_string, '', '-@', str(threads), alignment_file]
     if sortByName_True:
@@ -91,6 +93,7 @@ def bam2fastq(bam_file, write_command=True):
     command = ['samtools', 'fastq', bam_file, '>', bam_file+'.fastq']
     run_successfully, stdout, stderr = runCommandPopenCommunicate(command, True, None, write_command)
     return run_successfully
+
 
 def setPATHvariable(doNotUseProvidedSoftware, script_path):
     path_variable = os.environ['PATH']
@@ -107,6 +110,7 @@ def setPATHvariable(doNotUseProvidedSoftware, script_path):
     print '\n' + 'PATH variable:\n'
     print os.environ['PATH']
     print '\n'
+
 
 def getReadsFiles(workdir):
 
@@ -133,11 +137,9 @@ def getReadsFiles(workdir):
             else:
                 sample_data[sample] = [sample_file_foward,sample_file_reverse]
 
-    #for key, value in sample_data.items():
-    #    print key
-    #    print value
 
     return sample_data
+
 
 def runCommandPopenCommunicate(command, shell_True, timeout_sec_None, print_comand_True):
     run_successfully = False

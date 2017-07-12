@@ -16,67 +16,49 @@ def writeReport(workdir, sample, module1, module2, type):
             report.write("%s,%s,%s,%s\n" % (sample, module1, module2, type))
 
 
-def typeSeq_moduleOne(files, threads, workdir, script_path, minCoverage):
+def getType(module1, module2, minCoverage):
+    #TODO - implement percentage!! - confidence calling
 
-    readCount_1_1=None
-    readCount_1_2=None
+    print "\n---> Typing:\n"
 
-    #1.1
-    runMapping, samFile1 = utils.mappingBowtie2(files, os.path.join(os.path.dirname(script_path), 'src', 'seq',
-                                                '1.1.fasta'), threads, workdir, False, 1, None, True, "1.1")
-    if runMapping:
-        runSortAlignment, bamFile1 = utils.sortAlignment(samFile1, str(os.path.splitext(samFile1)[0] + '.bam'), False,
-                                                         threads, False)
-        if runSortAlignment:
-            runIndex = utils.indexAlignment(bamFile1, False)
-            if runIndex:
-                samfile1 = pysam.AlignmentFile(bamFile1, "rb")
-                readCount_1_1 = samfile1.mapped
-    else:
-        print 'Failed 1.1 Bowtie mapping'
-        return False, readCount_1_1
-
-    #1.2
-    runMapping, samFile2 = utils.mappingBowtie2(files, os.path.join(os.path.dirname(script_path), 'src', 'seq',
-                                                '1.2.fasta'), threads, workdir, True, 1, None, True, "1.2")
-    if runMapping:
-        runSortAlignment, bamFile2 = utils.sortAlignment(samFile2, str(os.path.splitext(samFile2)[0] + '.bam'), False,
-                                                         threads, False)
-        if runSortAlignment:
-            runIndex = utils.indexAlignment(bamFile2, False)
-            if runIndex:
-                samfile2 = pysam.AlignmentFile(bamFile2, "rb")
-                readCount_1_2 = samfile2.mapped
-    else:
-        print "Failed 1.2 Bowtie mapping"
-        return False, readCount_1_2
-
-    print "\n1.1 - " + str(readCount_1_1)
-    print "1.2 - " + str(readCount_1_2) + '\n'
-
-    new_target = None
-
-    if readCount_1_1 > readCount_1_2:
-        if readCount_1_1 > minCoverage:
-            new_target = '1.1'
+    if module1.keys()[0] == '1.1':
+        if module2['2.1'] >= minCoverage:
+            pA = utils.getPorpotionsModule2(module2,'2.1')
+            print "allele A (1.1 2.1): {} \n".format(format(pA, '.2f'))
         else:
-            print "coverage on the 1.1 module below the minCoverage %s read threshold " % (minCoverage)
-            print "results inconclusive"
-            return False, None, None
-    elif readCount_1_1 < readCount_1_2:
-        if readCount_1_1 > minCoverage:
-            new_target = '1.2'
+            print "coverage on the 2.1 module below the minCoverage {} read threshold\n".format(minCoverage)
+        if module2['2.2'] >= minCoverage:
+            pB = utils.getPorpotionsModule2(module2, '2.2')
+            print "allele B (1.1 2.2): {} \n".format(format(pB, '.2f'))
         else:
-            print "coverage on the 1.2 module below the minCoverage %s read threshold " % (minCoverage)
-            print "results inconclusive"
-            return False, None, None
+            print "coverage on the 2.2 module below the minCoverage {} read threshold\n".format(minCoverage)
+        if module2['2.3'] >= minCoverage:
+            pE = utils.getPorpotionsModule2(module2, '2.3')
+            print "allele E (1.1 2.3): {} \n".format(format(pE, '.2f'))
+        else:
+            print "coverage on the 2.3 module below the minCoverage {} read threshold\n".format(minCoverage)
+    elif module1.keys()[0] == '1.2':
+        if module2['2.1'] >= minCoverage:
+            pD = utils.getPorpotionsModule2(module2,'2.1')
+            print "allele D (1.2 2.1): {} \n".format(format(pD, '.2f'))
+        else:
+            print "coverage on the 2.1 module below the minCoverage {} read threshold\n".format(minCoverage)
+        if module2['2.2'] >= minCoverage:
+            pC = utils.getPorpotionsModule2(module2, '2.2')
+            print "allele C (1.2 2.2): {} \n".format(format(pC, '.2f'))
+        else:
+            print "coverage on the 2.2 module below the minCoverage {} read threshold\n".format(minCoverage)
+        if module2['2.3'] >= minCoverage:
+            pF = utils.getPorpotionsModule2(module2, '2.3')
+            print "allele F (1.2 2.3): {} \n".format(format(pF, '.2f'))
+        else:
+            print "coverage on the 2.3 module below the minCoverage {} read threshold\n".format(minCoverage)
     else:
-        print "results inconclusive"
-        return False, None, None
+        print "something went wrong with he module1 dictionary keys"
+        return False
 
-    print "\t- New target sequence: module %s \n" % (new_target)
-    module1={'1.1': int(readCount_1_1), '1.2': int(readCount_1_2)}
-    return True, new_target, module1
+    return True
+
 
 def typeSeq_moduleTwo(files, threads, workdir, script_path):
     readCount_2_1 = None
@@ -94,6 +76,7 @@ def typeSeq_moduleTwo(files, threads, workdir, script_path):
             if runIndex:
                 samfile1 = pysam.AlignmentFile(bamFile1, "rb")
                 readCount_2_1 = samfile1.mapped
+                print "\t -> Module 2.1 - {} reads".format(readCount_2_1)
     else:
         print 'Failed 2.1 Bowtie mapping'
         return False, None
@@ -109,6 +92,7 @@ def typeSeq_moduleTwo(files, threads, workdir, script_path):
             if runIndex:
                 samfile2 = pysam.AlignmentFile(bamFile2, "rb")
                 readCount_2_2 = samfile2.mapped
+                print "\t -> Module 2.2 - {} reads".format(readCount_2_2)
     else:
         print 'Failed 2.2 Bowtie mapping'
         return False, None
@@ -124,13 +108,10 @@ def typeSeq_moduleTwo(files, threads, workdir, script_path):
             if runIndex:
                 samfile3 = pysam.AlignmentFile(bamFile3, "rb")
                 readCount_2_3 = samfile3.mapped
+                print "\t -> Module 2.3 - {} reads".format(readCount_2_3)
     else:
         print 'Failed 2.3 Bowtie mapping'
         return False, None
-
-    print "\n2.1 - " + str(readCount_2_1)
-    print "2.2 - " + str(readCount_2_2)
-    print "2.3 - " + str(readCount_2_3) + '\n'
 
     module2 = {"2.1": int(readCount_2_1), "2.2": int(readCount_2_2), "2.3": int(readCount_2_3)}
     return True, module2
@@ -205,52 +186,78 @@ def getSeq_moduleTwo(first_type, bamfile, threads, workdir, script_path, sample)
         print "this sample is untypable"
         return False, None
 
-def getType(module1, module2, minCoverage):
-    #TODO - implement percentage!! - confidence calling
 
-    totalReadCount = sum(module1.values() + module2.values())
+def typeSeq_moduleOne(files, threads, workdir, script_path, minCoverage, proportionCutOff):
 
-    if  module2["2.1"] < minCoverage:
-        print "coverage on the 2.1 module below the minCoverage %s read threshold " % (minCoverage)
-        module2["2.1"] = 0
-    elif module2["2.2"] < minCoverage:
-        print "coverage on the 2.2 module below the minCoverage %s read threshold " % (minCoverage)
-        module2["2.2"] = 0
-    elif module2["2.3"] < minCoverage:
-        print "coverage on the 2.3 module below the minCoverage %s read threshold " % (minCoverage)
-        module2["2.3"] = 0
+    readCount_1_1=None
+    readCount_1_2=None
 
-    print "\nTyping support:\n"
+    #1.1
+    runMapping, samFile1 = utils.mappingBowtie2(files, os.path.join(os.path.dirname(script_path), 'src', 'seq',
+                                                '1.1.fasta'), threads, workdir, False, 1, None, True, "1.1")
+    if runMapping:
+        runSortAlignment, bamFile1 = utils.sortAlignment(samFile1, str(os.path.splitext(samFile1)[0] + '.bam'), False,
+                                                         threads, False)
+        if runSortAlignment:
+            runIndex = utils.indexAlignment(bamFile1, False)
+            if runIndex:
+                samfile1 = pysam.AlignmentFile(bamFile1, "rb")
+                readCount_1_1 = samfile1.mapped
+                print "\t -> Module 1.1 - {} reads".format(readCount_1_1)
+    else:
+        print 'Failed 1.1 Bowtie mapping'
+        return False, readCount_1_2
 
-    #readPercentageA = float((module1["1.1"] + module2["2.1"])) / float(totalReadCount) * 100
-    readPercentageA = float(float(module1["1.1"]/float(module1["1.1"]+module1["1.2"]))+float(module2["2.1"]/float(
-        module2["2.1"]+module2["2.2"]+module2["2.3"])))/2
-    print "allele A (1.1 2.1): {} \n".format(format(readPercentageA, '.2f'))
+    #1.2
+    runMapping, samFile2 = utils.mappingBowtie2(files, os.path.join(os.path.dirname(script_path), 'src', 'seq',
+                                                '1.2.fasta'), threads, workdir, True, 1, None, True, "1.2")
+    if runMapping:
+        runSortAlignment, bamFile2 = utils.sortAlignment(samFile2, str(os.path.splitext(samFile2)[0] + '.bam'), False,
+                                                         threads, False)
+        if runSortAlignment:
+            runIndex = utils.indexAlignment(bamFile2, False)
+            if runIndex:
+                samfile2 = pysam.AlignmentFile(bamFile2, "rb")
+                readCount_1_2 = samfile2.mapped
+                print "\t-> Module 1.2 - {} reads".format(readCount_1_2)
+    else:
+        print "Failed 1.2 Bowtie mapping"
+        return False, readCount_1_2
 
-    #readPercentageB = float((module1["1.1"] + module2["2.2"])) / float(totalReadCount) * 100
-    readPercentageB = float(float(module1["1.1"] / module1["1.1"] + module1["1.2"]) + float(module2["2.2"] / module2[
-        "2.1"] + module2["2.2"] + module2["2.3"])) / 2
-    print "allele B (1.1 2.2): {} \n".format(format(readPercentageB, '.2f'))
+    if readCount_1_1 < minCoverage and readCount_1_2 < minCoverage:
+        print "\n\t- Coverage on the 1.1 and 1.2 modules below the minCoverage {} read threshold. This sample cannot " \
+              "be typed".format(minCoverage)
+        return False, None
 
-    readPercentageC = float(float(module1["1.2"] / module1["1.1"] + module1["1.2"]) + float(module2["2.2"] / module2[
-        "2.1"] + module2["2.2"] + module2["2.3"])) / 2
-    print "allele C (1.2 2.2): {} \n".format(format(readPercentageC, '.2f'))
+    else:
+        if readCount_1_1 < minCoverage:
+            print "\n\t- Only 1.2 module found with {} reads. Using it as new target.".format(readCount_1_2)
+            module1 = {'1.2': int(readCount_1_2)}
+            return True, module1
+        elif readCount_1_2 < minCoverage:
+            print "\n\t- Only 1.1 module found with {} reads. Using it as new target.".format(readCount_1_1)
+            module1 = {'1.1': int(readCount_1_1)}
+            return True, module1
+        else:
+            module1 = {'1.1': int(readCount_1_1), '1.2': int(readCount_1_2)}
+            p_1_1 = utils.getPorpotionsModule1(module1, '1.1')
+            p_1_2 = utils.getPorpotionsModule1(module1, '1.2')
+            if p_1_1 >= proportionCutOff:
+                print "\n\t- Chosing 1.1 module as new target, with {} reads (proportion = {})".format(readCount_1_1, p_1_1)
+                del module1['1.2']
+                return True, module1
+            elif p_1_2 >= proportionCutOff:
+                print "\n\t- Chosing 1.2 module as new target, with {} reads (proportion = {}".format(readCount_1_2, p_1_2)
+                del module1['1.1']
+                return True, module1
+            else:
+                print "\n\t- Inconclusive results on the 1.x module! Sample cannot be typed."
+                return False, None
 
-    readPercentageD = float(float(module1["1.2"] / module1["1.1"] + module1["1.2"]) + float(module2["2.1"] / module2[
-        "2.1"] + module2["2.2"] + module2["2.3"])) / 2
-    print "allele D (1.2 2.1): {}\n".format(format(readPercentageD, '.2f'))
 
-    readPercentageE = float(float(module1["1.1"] / module1["1.1"] + module1["1.2"]) + float(module2["2.3"] / module2[
-        "2.1"] + module2["2.2"] + module2["2.3"])) / 2
-    print "allele E (1.1 2.3): {}\n".format(format(readPercentageE, '.2f'))
+def alignSamples(sampleFiles, reference, threads, workdir, script_path, keepFiles, minCoverage, proportionCutOff):
 
-    readPercentageF = float(float(module1["1.2"] / module1["1.1"] + module1["1.2"]) + float(module2["2.3"] / module2[
-        "2.1"] + module2["2.2"] + module2["2.3"])) / 2
-    print "allele F (1.2 2.3): {}\n".format(format(readPercentageF, '.2f'))
-
-
-
-def alignSamples(sampleFiles, reference, threads, workdir, script_path, keepFiles, minCoverage):
+    success=[]
 
     for sample, files in sorted(sampleFiles.items()):
         print '\n-> ' + sample + '\n'
@@ -287,6 +294,7 @@ def alignSamples(sampleFiles, reference, threads, workdir, script_path, keepFile
                                 matePairs_conserved.write(mate)
                         except:
                             pass
+
                     matePairs_conserved.close()
 
                     #TODO - this looks ugly..
@@ -297,14 +305,19 @@ def alignSamples(sampleFiles, reference, threads, workdir, script_path, keepFile
                                                            False, threads, False)
                     utils.indexAlignment(bam_matepairs, False)
                     utils.bam2fastq(bam_matepairs, False)
-                    success1, newTarget, module1 = typeSeq_moduleOne([bam_matepairs+'.fastq'], threads, newWorkdir,
-                                                              script_path, minCoverage)
 
-                    success2, module2 = getSeq_moduleTwo(newTarget, bamFile_fullRef, threads, newWorkdir,
+
+                    print "\n--> Mapping Module 1"
+                    success1, module1 = typeSeq_moduleOne([bam_matepairs+'.fastq'], threads, newWorkdir,
+                                                              script_path, minCoverage, proportionCutOff)
+                    if success1:
+
+                        print "\n--> Mapping Module 2"
+                        success2, module2 = getSeq_moduleTwo(module1.keys()[0], bamFile_fullRef, threads, newWorkdir,
                                                              script_path, sample)
-
-                    if success1 and success2:
-                         getType(module1,module2, minCoverage)
+                        if success2:
+                            successType = getType(module1,module2, minCoverage)
+                            success.append(successType)
 
                     #    print "--> Sample has a type %s ivr locus!" % (ivrType)
                     #    writeReport(workdir, sample, first_unit, second_unit, ivrType)

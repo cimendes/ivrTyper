@@ -33,7 +33,8 @@ def ivrTyper(args):
     samples_total_number = len(sample_data)
 
     #run bowtie
-    runTyper.alignSamples(sample_data,reference,args.threads, workdir, script_path, args.keepFiles, args.minCoverage)
+    success = runTyper.alignSamples(sample_data,reference,args.threads, workdir, script_path, args.keepFiles,
+                                    args.minCoverage, args.proportionCutOff)
 
     return number_samples_successfully, samples_total_number
 
@@ -58,9 +59,11 @@ def main():
                                          required=False, default=False)
 
     parser_optional_ivrTyper = parser.add_argument_group('ivrTyper module facultative options')
-    parser_optional_ivrTyper.add_argument('--minCoverage', type=int, metavar='N', help='Reference position minimum '
+    parser_optional_ivrTyper.add_argument('-m','--minCoverage', type=int, metavar='N', help='minimum'
                                           'coverage depth a module to be present in the sample',
                                           required=False, default=5)
+    parser_optional_ivrTyper.add_argument('-c','--proportionCutOff', type=float, metavar='N', help='Proportion cut off '
+                                          'for the module 1.x to be chosen as target', required=False, default=0.8)
 
     args = parser.parse_args()
 
