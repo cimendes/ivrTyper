@@ -33,7 +33,7 @@ def ivrTyper(args):
     samples_total_number = len(sample_data)
 
     #run bowtie
-    runTyper.alignSamples(sample_data,reference,args.threads, workdir, script_path, args.keepFiles)
+    runTyper.alignSamples(sample_data,reference,args.threads, workdir, script_path, args.keepFiles, args.minCoverage)
 
     return number_samples_successfully, samples_total_number
 
@@ -45,14 +45,22 @@ def main():
 
     parser_optional_general = parser.add_argument_group('General options')
     parser_optional_general.add_argument('-w', '--workdir', type=str, metavar='/path/to/workdir/directory/',
-                                         help='Path to the directory containing the read files in subdirectories, one per sample (fastq.gz or fq.gz and pair-end direction coded as _R1_001 / _R2_001 or _1 / _2) or to be downloaded',
+                                         help='Path to the directory containing the read files in subdirectories, one '
+                                         'per sample (fastq.gz or fq.gz and pair-end direction coded as _R1_001 / '
+                                         '_R2_001 or _1 / _2) or to be downloaded',
                                          required=True)
     parser_optional_general.add_argument('-j', '--threads', type=int, metavar='N', help='Number of threads to use',
                                          required=False, default=1)
-    parser_optional_general.add_argument('-u', '--skipProvidedSoftware', action='store_true', help='Do not use provided software',
+    parser_optional_general.add_argument('-u', '--skipProvidedSoftware', action='store_true', help='Do not use provided '
+                                         'software',
                                          required=False, default=False)
     parser_optional_general.add_argument('-k', '--keepFiles', action='store_true', help='Keep alignment files',
                                          required=False, default=False)
+
+    parser_optional_ivrTyper = parser.add_argument_group('ivrTyper module facultative options')
+    parser_optional_ivrTyper.add_argument('--minCoverage', type=int, metavar='N', help='Reference position minimum '
+                                          'coverage depth a module to be present in the sample',
+                                          required=False, default=5)
 
     args = parser.parse_args()
 

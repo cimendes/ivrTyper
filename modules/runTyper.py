@@ -16,7 +16,7 @@ def writeReport(workdir, sample, module1, module2, type):
             report.write("%s,%s,%s,%s\n" % (sample, module1, module2, type))
 
 
-def typeSeq_moduleOne(files, threads, workdir, script_path):
+def typeSeq_moduleOne(files, threads, workdir, script_path, minCoverage):
 
     readCount_1_1=None
     readCount_1_2=None
@@ -51,19 +51,30 @@ def typeSeq_moduleOne(files, threads, workdir, script_path):
         print "Failed 1.2 Bowtie mapping"
         return False, readCount_1_2
 
-    print "1.1 - " + str(readCount_1_1)
-    print "1.2 - " + str(readCount_1_2)
+    print "\n1.1 - " + str(readCount_1_1)
+    print "1.2 - " + str(readCount_1_2) + '\n'
 
     new_target = None
 
     if readCount_1_1 > readCount_1_2:
-        new_target = '1.1'
+        if readCount_1_1 > minCoverage:
+            new_target = '1.1'
+        else:
+            print "coverage on the 1.1 module below the minCoverage %s read threshold " % (minCoverage)
+            print "results inconclusive"
+            return False, None, None
     elif readCount_1_1 < readCount_1_2:
-        new_target = '1.2'
+        if readCount_1_1 > minCoverage:
+            new_target = '1.2'
+        else:
+            print "coverage on the 1.2 module below the minCoverage %s read threshold " % (minCoverage)
+            print "results inconclusive"
+            return False, None, None
     else:
         print "results inconclusive"
         return False, None, None
 
+    print "\t- New target sequence: module %s \n" % (new_target)
     module1={'1.1': int(readCount_1_1), '1.2': int(readCount_1_2)}
     return True, new_target, module1
 
@@ -117,9 +128,9 @@ def typeSeq_moduleTwo(files, threads, workdir, script_path):
         print 'Failed 2.3 Bowtie mapping'
         return False, None
 
-    print "2.1 - " + str(readCount_2_1)
+    print "\n2.1 - " + str(readCount_2_1)
     print "2.2 - " + str(readCount_2_2)
-    print "2.3 - " + str(readCount_2_3)
+    print "2.3 - " + str(readCount_2_3) + '\n'
 
     module2 = {"2.1": int(readCount_2_1), "2.2": int(readCount_2_2), "2.3": int(readCount_2_3)}
     return True, module2
@@ -194,46 +205,55 @@ def getSeq_moduleTwo(first_type, bamfile, threads, workdir, script_path, sample)
         print "this sample is untypable"
         return False, None
 
-def getType(module1, module2):
+def getType(module1, module2, minCoverage):
     #TODO - implement percentage!! - confidence calling
-    #TODO - fix the bug!!!!! 0.0 in all but A
 
     totalReadCount = sum(module1.values() + module2.values())
 
-    #print totalReadCount
+    if  module2["2.1"] < minCoverage:
+        print "coverage on the 2.1 module below the minCoverage %s read threshold " % (minCoverage)
+        module2["2.1"] = 0
+    elif module2["2.2"] < minCoverage:
+        print "coverage on the 2.2 module below the minCoverage %s read threshold " % (minCoverage)
+        module2["2.2"] = 0
+    elif module2["2.3"] < minCoverage:
+        print "coverage on the 2.3 module below the minCoverage %s read threshold " % (minCoverage)
+        module2["2.3"] = 0
 
-    print "Typing support: "
-    #allele A
-    readPercentageA = float((module1["1.1"] + module2["2.1"])) / float(totalReadCount) * 100
-    print "allele A: {}% ({}/{} reads)\n".format(format(readPercentageA, '.2f'), (module1["1.1"] + module2["2.1"]),
-                                                 totalReadCount)
+    print "\nTyping support:\n"
 
-    readPercentageB = (module1["1.1"] + module2["2.2"]) / totalReadCount
-    print "allele B: {}% ({}/{} reads)\n".format(format(readPercentageB, '.2f'), (module1["1.1"] + module2["2.2"]),
-                                                 totalReadCount)
+    #readPercentageA = float((module1["1.1"] + module2["2.1"])) / float(totalReadCount) * 100
+    readPercentageA = float(float(module1["1.1"]/float(module1["1.1"]+module1["1.2"]))+float(module2["2.1"]/float(
+        module2["2.1"]+module2["2.2"]+module2["2.3"])))/2
+    print "allele A (1.1 2.1): {} \n".format(format(readPercentageA, '.2f'))
 
-    readPercentageC = (module1["1.2"] + module2["2.2"]) / totalReadCount
-    print "allele C: {}% ({}/{} reads)\n".format(format(readPercentageC, '.2f'), (module1["1.1"] + module2["2.1"]),
-                                                 totalReadCount)
+    #readPercentageB = float((module1["1.1"] + module2["2.2"])) / float(totalReadCount) * 100
+    readPercentageB = float(float(module1["1.1"] / module1["1.1"] + module1["1.2"]) + float(module2["2.2"] / module2[
+        "2.1"] + module2["2.2"] + module2["2.3"])) / 2
+    print "allele B (1.1 2.2): {} \n".format(format(readPercentageB, '.2f'))
 
-    readPercentageD = (module1["1.2"] + module2["2.1"]) / totalReadCount
-    print "allele D: {}% ({}/{} reads)\n".format(format(readPercentageD, '.2f'), (module1["1.1"] + module2["2.1"]),
-                                                 totalReadCount)
+    readPercentageC = float(float(module1["1.2"] / module1["1.1"] + module1["1.2"]) + float(module2["2.2"] / module2[
+        "2.1"] + module2["2.2"] + module2["2.3"])) / 2
+    print "allele C (1.2 2.2): {} \n".format(format(readPercentageC, '.2f'))
 
-    readPercentageE = (module1["1.1"] + module2["2.3"]) / totalReadCount
-    print "allele E: {}% ({}/{} reads)\n".format(format(readPercentageE, '.2f'), (module1["1.1"] + module2["2.1"]),
-                                                 totalReadCount)
+    readPercentageD = float(float(module1["1.2"] / module1["1.1"] + module1["1.2"]) + float(module2["2.1"] / module2[
+        "2.1"] + module2["2.2"] + module2["2.3"])) / 2
+    print "allele D (1.2 2.1): {}\n".format(format(readPercentageD, '.2f'))
 
-    readPercentageF = (module1["1.2"] + module2["2.3"]) / totalReadCount
-    print "allele F: {}% ({}/{} reads)\n".format(format(readPercentageF, '.2f'), (module1["1.1"] + module2["2.1"]),
-                                                 totalReadCount)
+    readPercentageE = float(float(module1["1.1"] / module1["1.1"] + module1["1.2"]) + float(module2["2.3"] / module2[
+        "2.1"] + module2["2.2"] + module2["2.3"])) / 2
+    print "allele E (1.1 2.3): {}\n".format(format(readPercentageE, '.2f'))
+
+    readPercentageF = float(float(module1["1.2"] / module1["1.1"] + module1["1.2"]) + float(module2["2.3"] / module2[
+        "2.1"] + module2["2.2"] + module2["2.3"])) / 2
+    print "allele F (1.2 2.3): {}\n".format(format(readPercentageF, '.2f'))
 
 
 
-def alignSamples(sampleFiles, reference, threads, workdir, script_path, keepFiles):
+def alignSamples(sampleFiles, reference, threads, workdir, script_path, keepFiles, minCoverage):
 
     for sample, files in sorted(sampleFiles.items()):
-        print '\n-> ' + sample
+        print '\n-> ' + sample + '\n'
 
         newWorkdir=os.path.join(workdir, sample, "tmp")
         if not os.path.isdir(newWorkdir):
@@ -278,13 +298,14 @@ def alignSamples(sampleFiles, reference, threads, workdir, script_path, keepFile
                     utils.indexAlignment(bam_matepairs, False)
                     utils.bam2fastq(bam_matepairs, False)
                     success1, newTarget, module1 = typeSeq_moduleOne([bam_matepairs+'.fastq'], threads, newWorkdir,
-                                                              script_path)
+                                                              script_path, minCoverage)
 
                     success2, module2 = getSeq_moduleTwo(newTarget, bamFile_fullRef, threads, newWorkdir,
                                                              script_path, sample)
 
                     if success1 and success2:
-                         getType(module1,module2)
+                         getType(module1,module2, minCoverage)
+
                     #    print "--> Sample has a type %s ivr locus!" % (ivrType)
                     #    writeReport(workdir, sample, first_unit, second_unit, ivrType)
                     #else:

@@ -4,6 +4,12 @@ import subprocess
 from threading import Timer
 
 
+def getPorpotionsModule2(module2,allele):
+    return float(module2[allele]/float(module2["2.1"]+module2["2.2"]+module2["2.3"]))
+
+def getPorpotionsModule1(module1,allele):
+    return float(module1[allele]/float(module1["1.1"]+module1["1.2"]))
+
 # Indexing reference file using Bowtie2
 def indexSequenceBowtie2(referenceFile, threads, write_command=True):
     if os.path.isfile(str(referenceFile + '.1.bt2')):
