@@ -7,7 +7,7 @@ import argparse
 import modules.utils as utils
 import modules.runTyper as runTyper
 
-version = '0.1'
+version = '0.2'
 
 def ivrTyper(args):
 
