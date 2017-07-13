@@ -1,13 +1,32 @@
 import shlex
-import os
+import os, sys
 import subprocess
 from threading import Timer
 
+class bcolors:
+    #The entire table of ANSI color codes - https://gist.github.com/chrisopedia/8754917
+    BOLD = '\033[1m'
+    HEADER = '\033[1;96m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
 
-def getPorpotionsModule2(module2,allele):
+    def disable(self):
+        self.HEADER = ''
+        self.OKBLUE = ''
+        self.OKGREEN = ''
+        self.WARNING = ''
+        self.FAIL = ''
+        self.ENDC = ''
+
+
+def getProportionsModule2(module2, allele):
     return float(module2[allele]/float(module2["2.1"]+module2["2.2"]+module2["2.3"]))
 
-def getPorpotionsModule1(module1,allele):
+
+def getProportionsModule1(module1, allele):
     return float(module1[allele]/float(module1["1.1"]+module1["1.2"]))
 
 
@@ -107,7 +126,7 @@ def setPATHvariable(doNotUseProvidedSoftware, script_path):
         os.environ['PATH'] = str(':'.join([bowtie2, samtools, bcftools, path_variable]))
 
     # Print PATH variable
-    print '\n' + 'PATH variable:\n'
+    print(bcolors.BOLD + '\n' + 'PATH variable:' + bcolors.ENDC)
     print os.environ['PATH']
     print '\n'
 
@@ -133,7 +152,7 @@ def getReadsFiles(workdir):
                     sample_file_reverse = os.path.join(workdir, sample, file)
                     # print sample_file_reverse
             if sample_file_foward == None or sample_file_reverse == None:
-                print 'WARNING: No files found for ' + sample
+                print (bcolors.WARNING + 'WARNING: No files found for ' + sample + bcolors.ENDC)
             else:
                 sample_data[sample] = [sample_file_foward,sample_file_reverse]
 
@@ -183,4 +202,22 @@ def runCommandPopenCommunicate(command, shell_True, timeout_sec_None, print_coma
 def kill_subprocess_Popen(subprocess_Popen, command):
     print 'Command run out of time: ' + str(command)
     subprocess_Popen.kill()
+
+
+class Logger(object):
+    def __init__(self, out_directory, time_str):
+        self.logfile = os.path.join(out_directory, str('run.' + time_str + '.log'))
+        self.terminal = sys.stdout
+        self.log = open(self.logfile, "w")
+
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.write(message)
+        self.log.flush()
+
+    def flush(self):
+        pass
+
+    def getLogFile(self):
+        return self.logfile
 

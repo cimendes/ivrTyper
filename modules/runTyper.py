@@ -5,54 +5,71 @@ import pysam
 import shutil
 
 
-def writeReport(workdir, sample, module1, module2, type):
-    fname=os.path.join(workdir, "report.csv")
+def writeReport(workdir, sample, allele, proportion, reads_module1, reads_module2, time):
+    #TODO - it's a bit sloppy
+
+    fname=os.path.join(workdir, "report_" + time + ".csv")
+
     if not os.path.isfile(fname):
         with open(fname, "w") as report:
-            report.write("Sample,Module 1,Module 2,hsdS Type\n")
-            report.write("%s,%s,%s,%s\n" % (sample, module1, module2, type))
+            report.write("Sample,hsdS Type,Proportion,N reads Module 1,N reads Module 2\n")
+            report.write("%s,%s,%s,%s,%s\n" % (sample,allele, proportion,reads_module1,reads_module2))
     else:
         with open(fname, "a") as report:
-            report.write("%s,%s,%s,%s\n" % (sample, module1, module2, type))
+            report.write("%s,%s,%s,%s,%s\n" % (sample,allele, proportion,reads_module1,reads_module2))
 
 
-def getType(module1, module2, minCoverage):
-    #TODO - implement percentage!! - confidence calling
+def getType(workdir,sample, module1, module2, minCoverage, time):
 
-    print "\n---> Typing:\n"
+
+    print(utils.bcolors.BOLD + "\n---> Typing:\n" + utils.bcolors.ENDC)
 
     if module1.keys()[0] == '1.1':
         if module2['2.1'] >= minCoverage:
-            pA = utils.getPorpotionsModule2(module2,'2.1')
-            print "allele A (1.1 2.1): {} \n".format(format(pA, '.2f'))
+            pA = utils.getProportionsModule2(module2, '2.1')
+            print(utils.bcolors.OKGREEN + "Allele A (1.1 2.1): {} \n".format(format(pA, '.2f')) + utils.bcolors.ENDC)
+            writeReport(workdir, sample, 'A', pA, module1['1.1'], module2['2.1'], time)
         else:
-            print "coverage on the 2.1 module below the minCoverage {} read threshold\n".format(minCoverage)
+            print(utils.bcolors.WARNING + "Coverage on the 2.1 module below the minCoverage {} read "
+                                          "threshold.\n".format(minCoverage) + utils.bcolors.ENDC)
         if module2['2.2'] >= minCoverage:
-            pB = utils.getPorpotionsModule2(module2, '2.2')
-            print "allele B (1.1 2.2): {} \n".format(format(pB, '.2f'))
+            pB = utils.getProportionsModule2(module2, '2.2')
+            print(utils.bcolors.OKGREEN +  "Allele B (1.1 2.2): {} \n".format(format(pB, '.2f')) + utils.bcolors.ENDC)
+            writeReport(workdir, sample, 'B', pB, module1['1.1'], module2['2.2'], time)
         else:
-            print "coverage on the 2.2 module below the minCoverage {} read threshold\n".format(minCoverage)
+            print(utils.bcolors.WARNING +  "Coverage on the 2.2 module below the minCoverage {} read "
+                                           "threshold.\n".format(minCoverage) + utils.bcolors.ENDC)
         if module2['2.3'] >= minCoverage:
-            pE = utils.getPorpotionsModule2(module2, '2.3')
-            print "allele E (1.1 2.3): {} \n".format(format(pE, '.2f'))
+            pE = utils.getProportionsModule2(module2, '2.3')
+            print(utils.bcolors.OKGREEN +  "Allele E (1.1 2.3): {} \n".format(format(pE, '.2f')) + utils.bcolors.ENDC)
+            writeReport(workdir, sample, 'E', pE, module1['1.1'], module2['2.3'], time)
         else:
-            print "coverage on the 2.3 module below the minCoverage {} read threshold\n".format(minCoverage)
+            print(utils.bcolors.WARNING +  "Coverage on the 2.3 module below the minCoverage {} read "
+                                           "threshold.\n".format(minCoverage) + utils.bcolors.ENDC)
     elif module1.keys()[0] == '1.2':
         if module2['2.1'] >= minCoverage:
-            pD = utils.getPorpotionsModule2(module2,'2.1')
-            print "allele D (1.2 2.1): {} \n".format(format(pD, '.2f'))
+            pD = utils.getProportionsModule2(module2, '2.1')
+            print(utils.bcolors.OKGREEN + "Allele D (1.2 2.1): {} \n".format(format(pD, '.2f')) + utils.bcolors.ENDC)
+            writeReport(workdir, sample, 'D', pD, module1['1.2'], module2['2.1'], time)
         else:
-            print "coverage on the 2.1 module below the minCoverage {} read threshold\n".format(minCoverage)
+            print(utils.bcolors.WARNING + "Coverage on the 2.1 module below the minCoverage {} read "
+                                          "threshold.\n".format(minCoverage) + utils.bcolors.ENDC)
+
         if module2['2.2'] >= minCoverage:
-            pC = utils.getPorpotionsModule2(module2, '2.2')
-            print "allele C (1.2 2.2): {} \n".format(format(pC, '.2f'))
+            pC = utils.getProportionsModule2(module2, '2.2')
+            print(utils.bcolors.OKGREEN +  "Allele C (1.2 2.2): {} \n".format(format(pC, '.2f')) + utils.bcolors.ENDC)
+            writeReport(workdir, sample, 'C', pC, module1['1.2'], module2['2.2'], time)
         else:
-            print "coverage on the 2.2 module below the minCoverage {} read threshold\n".format(minCoverage)
+            print(utils.bcolors.WARNING + "Coverage on the 2.2 module below the minCoverage {} read "
+                                          "threshold.\n".format(minCoverage) + utils.bcolors.ENDC)
+
         if module2['2.3'] >= minCoverage:
-            pF = utils.getPorpotionsModule2(module2, '2.3')
-            print "allele F (1.2 2.3): {} \n".format(format(pF, '.2f'))
+            pF = utils.getProportionsModule2(module2, '2.3')
+            print(utils.bcolors.OKGREEN +  "Allele F (1.2 2.3): {} \n".format(format(pF, '.2f')) + utils.bcolors.ENDC)
+            writeReport(workdir, sample, 'F', pF, module1['1.2'], module2['2.3'], time)
         else:
-            print "coverage on the 2.3 module below the minCoverage {} read threshold\n".format(minCoverage)
+            print(utils.bcolors.WARNING + "Coverage on the 2.3 module below the minCoverage {} read "
+                                          "threshold.\n".format(minCoverage) + utils.bcolors.ENDC)
     else:
         print "something went wrong with he module1 dictionary keys"
         return False
@@ -76,9 +93,9 @@ def typeSeq_moduleTwo(files, threads, workdir, script_path):
             if runIndex:
                 samfile1 = pysam.AlignmentFile(bamFile1, "rb")
                 readCount_2_1 = samfile1.mapped
-                print "\t -> Module 2.1 - {} reads".format(readCount_2_1)
+                print(utils.bcolors.OKBLUE + "\t -> Module 2.1 - {} reads".format(readCount_2_1) + utils.bcolors.ENDC)
     else:
-        print 'Failed 2.1 Bowtie mapping'
+        print(utils.bcolors.FAIL + 'Failed 2.1 Bowtie mapping' + utils.bcolors.ENDC)
         return False, None
 
     # 2.2
@@ -92,9 +109,9 @@ def typeSeq_moduleTwo(files, threads, workdir, script_path):
             if runIndex:
                 samfile2 = pysam.AlignmentFile(bamFile2, "rb")
                 readCount_2_2 = samfile2.mapped
-                print "\t -> Module 2.2 - {} reads".format(readCount_2_2)
+                print(utils.bcolors.OKBLUE + "\t -> Module 2.2 - {} reads".format(readCount_2_2) + utils.bcolors.ENDC)
     else:
-        print 'Failed 2.2 Bowtie mapping'
+        print(utils.bcolors.FAIL + 'Failed 2.2 Bowtie mapping' + utils.bcolors.ENDC)
         return False, None
 
     # 2.3
@@ -108,9 +125,9 @@ def typeSeq_moduleTwo(files, threads, workdir, script_path):
             if runIndex:
                 samfile3 = pysam.AlignmentFile(bamFile3, "rb")
                 readCount_2_3 = samfile3.mapped
-                print "\t -> Module 2.3 - {} reads".format(readCount_2_3)
+                print(utils.bcolors.OKBLUE + "\t -> Module 2.3 - {} reads".format(readCount_2_3) + utils.bcolors.ENDC)
     else:
-        print 'Failed 2.3 Bowtie mapping'
+        print(utils.bcolors.FAIL +  'Failed 2.3 Bowtie mapping' + utils.bcolors.ENDC)
         return False, None
 
     module2 = {"2.1": int(readCount_2_1), "2.2": int(readCount_2_2), "2.3": int(readCount_2_3)}
@@ -183,7 +200,7 @@ def getSeq_moduleTwo(first_type, bamfile, threads, workdir, script_path, sample)
         return run, module2
 
     else:
-        print "this sample is untypable"
+        print(utils.bcolors.FAIL + "No module 2.x found. This sample is untypable." + utils.bcolors.ENDC)
         return False, None
 
 
@@ -203,9 +220,9 @@ def typeSeq_moduleOne(files, threads, workdir, script_path, minCoverage, proport
             if runIndex:
                 samfile1 = pysam.AlignmentFile(bamFile1, "rb")
                 readCount_1_1 = samfile1.mapped
-                print "\t -> Module 1.1 - {} reads".format(readCount_1_1)
+                print(utils.bcolors.OKBLUE + "\t -> Module 1.1 - {} reads".format(readCount_1_1) + utils.bcolors.ENDC)
     else:
-        print 'Failed 1.1 Bowtie mapping'
+        print(utils.bcolors.FAIL + 'Failed 1.1 Bowtie mapping' + utils.bcolors.ENDC)
         return False, readCount_1_2
 
     #1.2
@@ -219,114 +236,114 @@ def typeSeq_moduleOne(files, threads, workdir, script_path, minCoverage, proport
             if runIndex:
                 samfile2 = pysam.AlignmentFile(bamFile2, "rb")
                 readCount_1_2 = samfile2.mapped
-                print "\t-> Module 1.2 - {} reads".format(readCount_1_2)
+                print(utils.bcolors.OKBLUE + "\t-> Module 1.2 - {} reads".format(readCount_1_2) + utils.bcolors.ENDC)
     else:
-        print "Failed 1.2 Bowtie mapping"
+        print(utils.bcolors.FAIL + "Failed 1.2 Bowtie mapping" + utils.bcolors.ENDC)
         return False, readCount_1_2
 
     if readCount_1_1 < minCoverage and readCount_1_2 < minCoverage:
-        print "\n\t- Coverage on the 1.1 and 1.2 modules below the minCoverage {} read threshold. This sample cannot " \
-              "be typed".format(minCoverage)
+        print(utils.bcolors.FAIL + "\n\t- Coverage on the 1.1 and 1.2 modules below the minCoverage {} read threshold. "
+                                   "This sample cannot be typed.".format(minCoverage) + utils.bcolors.ENDC)
         return False, None
 
     else:
         if readCount_1_1 < minCoverage:
-            print "\n\t- Only 1.2 module found with {} reads. Using it as new target.".format(readCount_1_2)
+            print(utils.bcolors.OKGREEN + "\n\t- Only 1.2 module found with {} reads. Using it as new target.".format(
+                readCount_1_2) + utils.bcolors.ENDC)
             module1 = {'1.2': int(readCount_1_2)}
             return True, module1
         elif readCount_1_2 < minCoverage:
-            print "\n\t- Only 1.1 module found with {} reads. Using it as new target.".format(readCount_1_1)
+            print(utils.bcolors.OKGREEN +"\n\t- Only 1.1 module found with {} reads. Using it as new target.".format(
+                readCount_1_1) + utils.bcolors.ENDC)
             module1 = {'1.1': int(readCount_1_1)}
             return True, module1
         else:
             module1 = {'1.1': int(readCount_1_1), '1.2': int(readCount_1_2)}
-            p_1_1 = utils.getPorpotionsModule1(module1, '1.1')
-            p_1_2 = utils.getPorpotionsModule1(module1, '1.2')
+            p_1_1 = utils.getProportionsModule1(module1, '1.1')
+            p_1_2 = utils.getProportionsModule1(module1, '1.2')
             if p_1_1 >= proportionCutOff:
-                print "\n\t- Chosing 1.1 module as new target, with {} reads (proportion = {})".format(readCount_1_1, p_1_1)
+                print(utils.bcolors.OKGREEN + "\n\t- Chosing 1.1 module as new target, with {} reads (proportion = "
+                      "{})".format(readCount_1_1, p_1_1) + utils.bcolors.ENDC)
                 del module1['1.2']
                 return True, module1
             elif p_1_2 >= proportionCutOff:
-                print "\n\t- Chosing 1.2 module as new target, with {} reads (proportion = {}".format(readCount_1_2, p_1_2)
+                print(utils.bcolors.OKGREEN + "\n\t- Chosing 1.2 module as new target, with {} reads (proportion = "
+                      "{}".format(readCount_1_2, p_1_2) + utils.bcolors.ENDC)
                 del module1['1.1']
                 return True, module1
             else:
-                print "\n\t- Inconclusive results on the 1.x module! Sample cannot be typed."
+                print(utils.bcolors.FAIL + "\n\t- Inconclusive results on the 1.x module! Sample cannot be typed."
+                      + utils.bcolors.ENDC)
                 return False, None
 
 
-def alignSamples(sampleFiles, reference, threads, workdir, script_path, keepFiles, minCoverage, proportionCutOff):
+def alignSamples(sampleName, sampleFiles, reference, threads, workdir, script_path, keepFiles, minCoverage,
+                 proportionCutOff, time):
 
-    success=[]
+    success = False
 
-    for sample, files in sorted(sampleFiles.items()):
-        print '\n-> ' + sample + '\n'
+    newWorkdir=os.path.join(workdir, sampleName, "tmp")
+    if not os.path.isdir(newWorkdir):
+        os.makedirs(newWorkdir)
 
-        newWorkdir=os.path.join(workdir, sample, "tmp")
-        if not os.path.isdir(newWorkdir):
-            os.makedirs(newWorkdir)
+    runMapping, samFile_fullRef = utils.mappingBowtie2(sampleFiles, reference, threads, newWorkdir, False, 1, None,
+                                                       True, sampleName)
 
-        runMapping, samFile_fullRef = utils.mappingBowtie2(files, reference, threads, newWorkdir, False, 1, None,
-                                                           True, sample)
+    if runMapping:
+        runSortAlignment, bamFile_fullRef = utils.sortAlignment(samFile_fullRef, str(os.path.splitext(samFile_fullRef)[0]
+                                                                               + '.bam'), False, threads, False)
+        if runSortAlignment:
+            runIndex = utils.indexAlignment(bamFile_fullRef, False)
+            if runIndex:
 
-        #TODO - is sorting needed?
-        if runMapping:
-            runSortAlignment, bamFile_fullRef = utils.sortAlignment(samFile_fullRef, str(os.path.splitext(samFile_fullRef)[0]
-                                                                                   + '.bam'), False, threads, False)
-            if runSortAlignment:
-                runIndex = utils.indexAlignment(bamFile_fullRef, False)
-                if runIndex:
-                    pysam_fullRef = pysam.AlignmentFile(bamFile_fullRef, "rb")
+                pysam_fullRef = pysam.AlignmentFile(bamFile_fullRef, "rb")
 
-                    #fetching reads mapped to the conserved target region in hsdS
-                    iter=pysam_fullRef.fetch('CP000410_extraction_-_Type_I_RM_system_locus',8532-1,8722-1)
-                    matePairs_conserved = pysam.AlignmentFile(os.path.join(newWorkdir, sample +
-                                                              "_pysam_matepairs_conserved_module1.bam"), "wb",
-                                                              template=pysam_fullRef)
+                #fetching reads mapped to the conserved target region in hsdS
+                iter=pysam_fullRef.fetch('CP000410_extraction_-_Type_I_RM_system_locus',8532-1,8722-1, until_eof=True)
+                matePairs_conserved = pysam.AlignmentFile(os.path.join(newWorkdir, sampleName +
+                                                          "_pysam_matepairs_conserved_module1.bam"), "wb",
+                                                          template=pysam_fullRef)
 
-                    for x in iter:
+                for x in iter:
 
-                        #TODO - remove exception - Throws error is mate is unmapped
-                        #read needs to be mapped to the reverse strand of the reference and both mates need to be pair
-                        try:
-                            if x.is_paired and x.is_reverse:
-                                mate=pysam_fullRef.mate(x)
-                                matePairs_conserved.write(mate)
-                        except:
-                            pass
+                    #TODO - remove exception - Throws error is mate is unmapped
+                    #read needs to be mapped to the reverse strand of the reference and both mates need to be pair
+                    try:
+                        if x.is_paired and x.is_reverse:
+                            mate=pysam_fullRef.mate(x)
+                            matePairs_conserved.write(mate)
+                    except:
+                        pass
 
-                    matePairs_conserved.close()
-
-                    #TODO - this looks ugly..
-                    runSortAlignment, bam_matepairs = utils.sortAlignment(os.path.join(newWorkdir,
-                                                           sample + "_pysam_matepairs_conserved_module1.bam"),
-                                                           os.path.join(newWorkdir,sample +
-                                                           "_pysam_matepairs_conserved_module1.bam"),
-                                                           False, threads, False)
-                    utils.indexAlignment(bam_matepairs, False)
-                    utils.bam2fastq(bam_matepairs, False)
+                matePairs_conserved.close()
 
 
-                    print "\n--> Mapping Module 1"
-                    success1, module1 = typeSeq_moduleOne([bam_matepairs+'.fastq'], threads, newWorkdir,
-                                                              script_path, minCoverage, proportionCutOff)
-                    if success1:
+                #TODO - this looks ugly..
+                runSortAlignment, bam_matepairs = utils.sortAlignment(os.path.join(newWorkdir,
+                                                       sampleName + "_pysam_matepairs_conserved_module1.bam"),
+                                                       os.path.join(newWorkdir, sampleName +
+                                                       "_pysam_matepairs_conserved_module1.bam"),
+                                                       False, threads, False)
+                utils.indexAlignment(bam_matepairs, False)
+                utils.bam2fastq(bam_matepairs, False)
 
-                        print "\n--> Mapping Module 2"
-                        success2, module2 = getSeq_moduleTwo(module1.keys()[0], bamFile_fullRef, threads, newWorkdir,
-                                                             script_path, sample)
-                        if success2:
-                            successType = getType(module1,module2, minCoverage)
-                            success.append(successType)
+                print(utils.bcolors.BOLD + "\n--> Mapping Module 1" + utils.bcolors.ENDC)
+                success1, module1 = typeSeq_moduleOne([bam_matepairs+'.fastq'], threads, newWorkdir,
+                                                          script_path, minCoverage, proportionCutOff)
+                if success1:
 
-                    #    print "--> Sample has a type %s ivr locus!" % (ivrType)
-                    #    writeReport(workdir, sample, first_unit, second_unit, ivrType)
-                    #else:
-                    #    print "No ivr locus found for this sample"
+                    print(utils.bcolors.BOLD + "\n--> Mapping Module 2" + utils.bcolors.ENDC)
+                    success2, module2 = getSeq_moduleTwo(module1.keys()[0], bamFile_fullRef, threads, newWorkdir,
+                                                         script_path, sampleName)
+                    if success2:
+                        successType = getType(workdir, sampleName, module1, module2, minCoverage, time)
 
+                        success = True
 
-        if not keepFiles:
-            #TODO - this is STILL not removing /tmp/ folder
-            shutil.rmtree(newWorkdir+'/', ignore_errors=True)
-            if os.path.exists(newWorkdir) and not os.listdir(newWorkdir):
-                os.remove(newWorkdir)
+    if not keepFiles:
+        #TODO - this is STILL not removing /tmp/ folder
+        shutil.rmtree(newWorkdir+'/', ignore_errors=True)
+        if os.path.exists(newWorkdir) and not os.listdir(newWorkdir):
+            os.remove(newWorkdir)
+
+    return success

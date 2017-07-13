@@ -7,34 +7,39 @@ import argparse
 import modules.utils as utils
 import modules.runTyper as runTyper
 
-version = '0.2'
 
-def ivrTyper(args):
+version = '0.3'
+
+
+def ivrTyper(args, time):
 
     number_samples_successfully = 0
-    samples_total_number = 0
 
     #creating work directory if necessary
     workdir = os.path.abspath(args.workdir)
     if not os.path.isdir(workdir):
         os.makedirs(workdir)
 
-    print '\n' + 'Starting...' + '\n'
-
     #Script path, setting environment variables and reference path
     script_path = os.path.abspath(sys.argv[0])
     utils.setPATHvariable(args.skipProvidedSoftware, script_path)
+
     reference = os.path.join(os.path.dirname(script_path), 'src/seq/D39_ivr_extended.fasta')
-    # print reference
-    # indexRun = runTyper.indexSequenceBowtie2(reference, args.threads)
 
     #load reads file paths
     sample_data = utils.getReadsFiles(workdir)
     samples_total_number = len(sample_data)
 
-    #run bowtie
-    success = runTyper.alignSamples(sample_data,reference,args.threads, workdir, script_path, args.keepFiles,
-                                    args.minCoverage, args.proportionCutOff)
+    if samples_total_number == 0:
+        sys.exit('No samples found.')
+
+    #Run typing algorithm
+    for sample, files in sorted(sample_data.items()):
+        print(utils.bcolors.HEADER + '\n-> ' + sample + '\n' + utils.bcolors.ENDC)
+        success = runTyper.alignSamples(sample, files, reference, args.threads, workdir, script_path, args.keepFiles,
+                                    args.minCoverage, args.proportionCutOff, time)
+        if success:
+            number_samples_successfully+=1
 
     return number_samples_successfully, samples_total_number
 
@@ -67,29 +72,34 @@ def main():
 
     args = parser.parse_args()
 
-
     if args.workdir is None:
         parser.error('A directory containing at least one paired-end sample should be provided to --workdir.')
 
-    start_time = time.time()
+    general_start_time = time.time()
+    time_str = time.strftime("%Y%m%d-%H%M%S")
 
-    print '\n' + "_,.-'``'-.,_,.='`` irvTyper ``'-.,_,.-'``'-.,_"
-    print '\n' '-- ivr locus determination from paired-end genomic data --'
+    # Start logger
+    sys.stdout = utils.Logger(args.workdir, time_str)
+
+    print(utils.bcolors.HEADER + '\n' + "_,.-'``'-.,_,.='`` irvTyper ``'-.,_,.-'``'-.,_")
+    print('\n' '-- ivr locus determination from paired-end genomic data --' + utils.bcolors.ENDC)
 
     #run ivrTyper
-    number_samples_successfully, samples_total_number = ivrTyper(args)
+    number_samples_successfully, samples_total_number = ivrTyper(args, time_str)
 
-    print '\n' + 'ivrTyper has finished!'
-    print '\n' + str(number_samples_successfully) + ' samples out of ' + str(samples_total_number) + ' ran successfully'
+    print(utils.bcolors.HEADER + '\n' + 'ivrTyper has finished!' + utils.bcolors.ENDC)
+    print('\n {} samples out of {} ran successfully'.format(str(number_samples_successfully),str(samples_total_number)))
 
-    #TODO - Run time (source: ReMatCh)
-    #time_taken = utils.runTime(start_time)
-    #del time_taken
-
-
+    end_time = time.time()
+    time_taken = end_time - general_start_time
+    hours, rest = divmod(time_taken, 3600)
+    minutes, seconds = divmod(rest, 60)
+    print("\nRuntime: {}h:{}m:{}s\n".format(str(hours), str(minutes), str(round(seconds, 2))))
 
     if number_samples_successfully == 0:
         sys.exit('No samples ran successfully.')
+
+    sys.exit(0)
 
 
 if __name__ == "__main__":
