@@ -6,9 +6,10 @@ import time
 import argparse
 import modules.utils as utils
 import modules.runTyper as runTyper
+import modules.getSeqFromENA as seqFromWebTaxon
 
 
-version = '0.3'
+version = '0.4'
 
 
 def ivrTyper(args, time):
@@ -25,6 +26,8 @@ def ivrTyper(args, time):
     utils.setPATHvariable(args.skipProvidedSoftware, script_path)
 
     reference = os.path.join(os.path.dirname(script_path), 'src/seq/D39_ivr_extended.fasta')
+
+    asperaKey = os.path.abspath(args.asperaKey.name) if args.asperaKey is not None else None
 
     #load reads file paths
     sample_data = utils.getReadsFiles(workdir)
@@ -69,6 +72,25 @@ def main():
                                           required=False, default=5)
     parser_optional_ivrTyper.add_argument('-c','--proportionCutOff', type=float, metavar='N', help='Proportion cut off '
                                           'for the module 1.x to be chosen as target', required=False, default=0.8)
+
+    parser_optional_download = parser.add_argument_group('Download facultative options')
+    parser_optional_download.add_argument('-a', '--asperaKey', type=argparse.FileType('r'),
+                                          metavar='/path/to/asperaweb_id_dsa.openssh',
+                                          help='Download fastq files from ENA using Aspera Connect. With this option, '
+                                          'the path to Private-key file asperaweb_id_dsa.openssh must be provided '
+                                          '(normaly found in ~/.aspera/connect/etc/asperaweb_id_dsa.openssh).',
+                                          required=False)
+    #parser_optional_download.add_argument('-k', '--keepDownloadedFastq', action='store_true',
+    #                                      help='Tells ReMatCh to keep the fastq files downloaded')
+
+    parser_optional_download_exclusive = parser.add_mutually_exclusive_group()
+    parser_optional_download_exclusive.add_argument('-l', '--listIDs', type=argparse.FileType('r'),
+                                                    metavar='/path/to/list_IDs.txt',
+                                                    help='Path to list containing the IDs to be downloaded (one per line)',
+                                                    required=False)
+    parser_optional_download_exclusive.add_argument('-t', '--taxon', type=str, metavar='"Streptococcus agalactiae"',
+                                                    help='Taxon name for which fastq files will be downloaded',
+                                                    required=False)
 
     args = parser.parse_args()
 

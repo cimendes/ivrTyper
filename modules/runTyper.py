@@ -5,22 +5,24 @@ import pysam
 import shutil
 
 
-def writeReport(workdir, sample, allele, proportion, reads_module1, reads_module2, time):
+def writeReport(workdir, sample, time, module1_reads, module2_reads, proportions):
     #TODO - it's a bit sloppy
 
     fname=os.path.join(workdir, "report_" + time + ".csv")
+    toWrite = [sample] + module1_reads + module2_reads + proportions
 
     if not os.path.isfile(fname):
         with open(fname, "w") as report:
-            report.write("Sample,hsdS Type,Proportion,N reads Module 1,N reads Module 2\n")
-            report.write("%s,%s,%s,%s,%s\n" % (sample,allele, proportion,reads_module1,reads_module2))
+            report.write("Sample,1.1,1.2,2.1,2.2,2.3,pA,pB,pE,pD,pC,pF\n")
+            report.write(','.join(toWrite))
     else:
         with open(fname, "a") as report:
-            report.write("%s,%s,%s,%s,%s\n" % (sample,allele, proportion,reads_module1,reads_module2))
+            report.write(','.join(toWrite))
 
 
-def getType(workdir,sample, module1, module2, minCoverage, time):
+def getType(workdir,sample, module1, module2, minCoverage):
 
+    toWrite=['NA']*6
 
     print(utils.bcolors.BOLD + "\n---> Typing:\n" + utils.bcolors.ENDC)
 
@@ -28,37 +30,44 @@ def getType(workdir,sample, module1, module2, minCoverage, time):
         if module2['2.1'] >= minCoverage:
             pA = utils.getProportionsModule2(module2, '2.1')
             print(utils.bcolors.OKGREEN + "Allele A (1.1 2.1): {} \n".format(format(pA, '.2f')) + utils.bcolors.ENDC)
-            writeReport(workdir, sample, 'A', pA, module1['1.1'], module2['2.1'], time)
+            toWrite[0]=str(pA)
         else:
             print(utils.bcolors.WARNING + "Coverage on the 2.1 module below the minCoverage {} read "
                                           "threshold.\n".format(minCoverage) + utils.bcolors.ENDC)
+            toWrite[0] = '0'
+
         if module2['2.2'] >= minCoverage:
             pB = utils.getProportionsModule2(module2, '2.2')
             print(utils.bcolors.OKGREEN +  "Allele B (1.1 2.2): {} \n".format(format(pB, '.2f')) + utils.bcolors.ENDC)
-            writeReport(workdir, sample, 'B', pB, module1['1.1'], module2['2.2'], time)
+            toWrite[1] = str(pB)
         else:
             print(utils.bcolors.WARNING +  "Coverage on the 2.2 module below the minCoverage {} read "
                                            "threshold.\n".format(minCoverage) + utils.bcolors.ENDC)
+            toWrite[1] = '0'
+
         if module2['2.3'] >= minCoverage:
             pE = utils.getProportionsModule2(module2, '2.3')
             print(utils.bcolors.OKGREEN +  "Allele E (1.1 2.3): {} \n".format(format(pE, '.2f')) + utils.bcolors.ENDC)
-            writeReport(workdir, sample, 'E', pE, module1['1.1'], module2['2.3'], time)
+            toWrite[2] = str(pE)
         else:
             print(utils.bcolors.WARNING +  "Coverage on the 2.3 module below the minCoverage {} read "
                                            "threshold.\n".format(minCoverage) + utils.bcolors.ENDC)
+            toWrite[2] = '0'
+
     elif module1.keys()[0] == '1.2':
         if module2['2.1'] >= minCoverage:
             pD = utils.getProportionsModule2(module2, '2.1')
             print(utils.bcolors.OKGREEN + "Allele D (1.2 2.1): {} \n".format(format(pD, '.2f')) + utils.bcolors.ENDC)
-            writeReport(workdir, sample, 'D', pD, module1['1.2'], module2['2.1'], time)
+            toWrite[3] = str(pD)
         else:
             print(utils.bcolors.WARNING + "Coverage on the 2.1 module below the minCoverage {} read "
                                           "threshold.\n".format(minCoverage) + utils.bcolors.ENDC)
+            toWrite[3] = '0'
 
         if module2['2.2'] >= minCoverage:
             pC = utils.getProportionsModule2(module2, '2.2')
             print(utils.bcolors.OKGREEN +  "Allele C (1.2 2.2): {} \n".format(format(pC, '.2f')) + utils.bcolors.ENDC)
-            writeReport(workdir, sample, 'C', pC, module1['1.2'], module2['2.2'], time)
+            toWrite[4] = str(pC)
         else:
             print(utils.bcolors.WARNING + "Coverage on the 2.2 module below the minCoverage {} read "
                                           "threshold.\n".format(minCoverage) + utils.bcolors.ENDC)
@@ -66,15 +75,16 @@ def getType(workdir,sample, module1, module2, minCoverage, time):
         if module2['2.3'] >= minCoverage:
             pF = utils.getProportionsModule2(module2, '2.3')
             print(utils.bcolors.OKGREEN +  "Allele F (1.2 2.3): {} \n".format(format(pF, '.2f')) + utils.bcolors.ENDC)
-            writeReport(workdir, sample, 'F', pF, module1['1.2'], module2['2.3'], time)
+            toWrite[5] = str(pF)
         else:
             print(utils.bcolors.WARNING + "Coverage on the 2.3 module below the minCoverage {} read "
                                           "threshold.\n".format(minCoverage) + utils.bcolors.ENDC)
+            toWrite[5] = '0'
     else:
         print "something went wrong with he module1 dictionary keys"
-        return False
+        return False, None
 
-    return True
+    return True, toWrite
 
 
 def typeSeq_moduleTwo(files, threads, workdir, script_path):
@@ -93,10 +103,10 @@ def typeSeq_moduleTwo(files, threads, workdir, script_path):
             if runIndex:
                 samfile1 = pysam.AlignmentFile(bamFile1, "rb")
                 readCount_2_1 = samfile1.mapped
-                print(utils.bcolors.OKBLUE + "\t -> Module 2.1 - {} reads".format(readCount_2_1) + utils.bcolors.ENDC)
+                print(utils.bcolors.BOLD + "\t -> Module 2.1 - {} reads".format(readCount_2_1) + utils.bcolors.ENDC)
     else:
         print(utils.bcolors.FAIL + 'Failed 2.1 Bowtie mapping' + utils.bcolors.ENDC)
-        return False, None
+        return False, None, None
 
     # 2.2
     runMapping, samFile2 = utils.mappingBowtie2(files, os.path.join(os.path.dirname(script_path), 'src', 'seq',
@@ -109,10 +119,10 @@ def typeSeq_moduleTwo(files, threads, workdir, script_path):
             if runIndex:
                 samfile2 = pysam.AlignmentFile(bamFile2, "rb")
                 readCount_2_2 = samfile2.mapped
-                print(utils.bcolors.OKBLUE + "\t -> Module 2.2 - {} reads".format(readCount_2_2) + utils.bcolors.ENDC)
+                print(utils.bcolors.BOLD + "\t -> Module 2.2 - {} reads".format(readCount_2_2) + utils.bcolors.ENDC)
     else:
         print(utils.bcolors.FAIL + 'Failed 2.2 Bowtie mapping' + utils.bcolors.ENDC)
-        return False, None
+        return False, None, None
 
     # 2.3
     runMapping, samFile3 = utils.mappingBowtie2(files, os.path.join(os.path.dirname(script_path), 'src', 'seq',
@@ -125,13 +135,14 @@ def typeSeq_moduleTwo(files, threads, workdir, script_path):
             if runIndex:
                 samfile3 = pysam.AlignmentFile(bamFile3, "rb")
                 readCount_2_3 = samfile3.mapped
-                print(utils.bcolors.OKBLUE + "\t -> Module 2.3 - {} reads".format(readCount_2_3) + utils.bcolors.ENDC)
+                print(utils.bcolors.BOLD + "\t -> Module 2.3 - {} reads".format(readCount_2_3) + utils.bcolors.ENDC)
     else:
         print(utils.bcolors.FAIL +  'Failed 2.3 Bowtie mapping' + utils.bcolors.ENDC)
-        return False, None
+        return False, None, None
 
     module2 = {"2.1": int(readCount_2_1), "2.2": int(readCount_2_2), "2.3": int(readCount_2_3)}
-    return True, module2
+    toWrite = [str(readCount_2_1),str(readCount_2_2),str(readCount_2_3)]
+    return True, module2, toWrite
 
 
 def getSeq_moduleTwo(first_type, bamfile, threads, workdir, script_path, sample):
@@ -165,9 +176,9 @@ def getSeq_moduleTwo(first_type, bamfile, threads, workdir, script_path, sample)
         utils.indexAlignment(bamFile_1_1, False)
         utils.bam2fastq(bamFile_1_1, False)
 
-        run, module2 =typeSeq_moduleTwo([bamFile_1_1 + '.fastq'], threads, workdir, script_path)
+        run, module2, report2 =typeSeq_moduleTwo([bamFile_1_1 + '.fastq'], threads, workdir, script_path)
 
-        return run, module2
+        return run, module2, report2
 
     elif first_type == '1.2':
         iter = pysam_fullRef.fetch('CP000410_extraction_-_Type_I_RM_system_locus', 4462 - 1, 4861 - 1)
@@ -195,9 +206,9 @@ def getSeq_moduleTwo(first_type, bamfile, threads, workdir, script_path, sample)
         utils.indexAlignment(bamFile3, False)
         utils.bam2fastq(bamFile3, False)
 
-        run, module2 = typeSeq_moduleTwo([bamFile3 + '.fastq'], threads, workdir, script_path)
+        run, module2, report2= typeSeq_moduleTwo([bamFile3 + '.fastq'], threads, workdir, script_path)
 
-        return run, module2
+        return run, module2, report2
 
     else:
         print(utils.bcolors.FAIL + "No module 2.x found. This sample is untypable." + utils.bcolors.ENDC)
@@ -220,10 +231,10 @@ def typeSeq_moduleOne(files, threads, workdir, script_path, minCoverage, proport
             if runIndex:
                 samfile1 = pysam.AlignmentFile(bamFile1, "rb")
                 readCount_1_1 = samfile1.mapped
-                print(utils.bcolors.OKBLUE + "\t -> Module 1.1 - {} reads".format(readCount_1_1) + utils.bcolors.ENDC)
+                print(utils.bcolors.BOLD + "\t -> Module 1.1 - {} reads".format(readCount_1_1) + utils.bcolors.ENDC)
     else:
         print(utils.bcolors.FAIL + 'Failed 1.1 Bowtie mapping' + utils.bcolors.ENDC)
-        return False, readCount_1_2
+        return False, readCount_1_2, None
 
     #1.2
     runMapping, samFile2 = utils.mappingBowtie2(files, os.path.join(os.path.dirname(script_path), 'src', 'seq',
@@ -236,28 +247,32 @@ def typeSeq_moduleOne(files, threads, workdir, script_path, minCoverage, proport
             if runIndex:
                 samfile2 = pysam.AlignmentFile(bamFile2, "rb")
                 readCount_1_2 = samfile2.mapped
-                print(utils.bcolors.OKBLUE + "\t-> Module 1.2 - {} reads".format(readCount_1_2) + utils.bcolors.ENDC)
+                print(utils.bcolors.BOLD + "\t-> Module 1.2 - {} reads".format(readCount_1_2) + utils.bcolors.ENDC)
     else:
         print(utils.bcolors.FAIL + "Failed 1.2 Bowtie mapping" + utils.bcolors.ENDC)
-        return False, readCount_1_2
+        return False, readCount_1_2, None
 
     if readCount_1_1 < minCoverage and readCount_1_2 < minCoverage:
         print(utils.bcolors.FAIL + "\n\t- Coverage on the 1.1 and 1.2 modules below the minCoverage {} read threshold. "
                                    "This sample cannot be typed.".format(minCoverage) + utils.bcolors.ENDC)
-        return False, None
+        return False, None, None
 
     else:
         if readCount_1_1 < minCoverage:
             print(utils.bcolors.OKGREEN + "\n\t- Only 1.2 module found with {} reads. Using it as new target.".format(
                 readCount_1_2) + utils.bcolors.ENDC)
             module1 = {'1.2': int(readCount_1_2)}
-            return True, module1
+            toWrite=[0,str(readCount_1_2)]
+            return True, module1, toWrite
+
         elif readCount_1_2 < minCoverage:
             print(utils.bcolors.OKGREEN +"\n\t- Only 1.1 module found with {} reads. Using it as new target.".format(
                 readCount_1_1) + utils.bcolors.ENDC)
             module1 = {'1.1': int(readCount_1_1)}
-            return True, module1
+            toWrite=[str(readCount_1_1), 0]
+            return True, module1, toWrite
         else:
+            toWrite=[str(readCount_1_1),str(readCount_1_2)]
             module1 = {'1.1': int(readCount_1_1), '1.2': int(readCount_1_2)}
             p_1_1 = utils.getProportionsModule1(module1, '1.1')
             p_1_2 = utils.getProportionsModule1(module1, '1.2')
@@ -265,16 +280,16 @@ def typeSeq_moduleOne(files, threads, workdir, script_path, minCoverage, proport
                 print(utils.bcolors.OKGREEN + "\n\t- Chosing 1.1 module as new target, with {} reads (proportion = "
                       "{})".format(readCount_1_1, p_1_1) + utils.bcolors.ENDC)
                 del module1['1.2']
-                return True, module1
+                return True, module1, toWrite
             elif p_1_2 >= proportionCutOff:
                 print(utils.bcolors.OKGREEN + "\n\t- Chosing 1.2 module as new target, with {} reads (proportion = "
                       "{}".format(readCount_1_2, p_1_2) + utils.bcolors.ENDC)
                 del module1['1.1']
-                return True, module1
+                return True, module1, toWrite
             else:
                 print(utils.bcolors.FAIL + "\n\t- Inconclusive results on the 1.x module! Sample cannot be typed."
                       + utils.bcolors.ENDC)
-                return False, None
+                return False, None, None
 
 
 def alignSamples(sampleName, sampleFiles, reference, threads, workdir, script_path, keepFiles, minCoverage,
@@ -328,17 +343,19 @@ def alignSamples(sampleName, sampleFiles, reference, threads, workdir, script_pa
                 utils.bam2fastq(bam_matepairs, False)
 
                 print(utils.bcolors.BOLD + "\n--> Mapping Module 1" + utils.bcolors.ENDC)
-                success1, module1 = typeSeq_moduleOne([bam_matepairs+'.fastq'], threads, newWorkdir,
+                success1, module1, report1 = typeSeq_moduleOne([bam_matepairs+'.fastq'], threads, newWorkdir,
                                                           script_path, minCoverage, proportionCutOff)
                 if success1:
 
                     print(utils.bcolors.BOLD + "\n--> Mapping Module 2" + utils.bcolors.ENDC)
-                    success2, module2 = getSeq_moduleTwo(module1.keys()[0], bamFile_fullRef, threads, newWorkdir,
-                                                         script_path, sampleName)
+                    success2, module2, report2 = getSeq_moduleTwo(module1.keys()[0], bamFile_fullRef, threads,
+                                                                 newWorkdir, script_path, sampleName)
                     if success2:
-                        successType = getType(workdir, sampleName, module1, module2, minCoverage, time)
+                        successTyping, report3 = getType(workdir, sampleName, module1, module2, minCoverage)
 
-                        success = True
+                        if successTyping:
+                            success = True
+                            writeReport(workdir, sampleName, time, report1, report2, report3)
 
     if not keepFiles:
         #TODO - this is STILL not removing /tmp/ folder
