@@ -3,4 +3,6 @@
 .bai
 .fastq
 .idea/
+.pyc
+modules/.pyc
 
