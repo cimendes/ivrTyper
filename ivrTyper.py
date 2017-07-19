@@ -6,20 +6,42 @@ import time
 import argparse
 import modules.utils as utils
 import modules.runTyper as runTyper
-import modules.getSeqFromENA as seqFromWebTaxon
+import modules.getSeqFromENA as getSeq
+import modules.download as download
 
 
-version = '0.4'
+version = '0.5'
+
+def getListIDs(workdir, fileListIDs, taxon_name):
+    searched_fastq_files = False
+    listIDs = []
+    if fileListIDs is None and taxon_name is None:
+        listIDs = getSeq.getReadsFiles(workdir)
+        searched_fastq_files = True
+    elif fileListIDs is not None:
+        listIDs = getSeq.getListIDs_fromFile(os.path.abspath(fileListIDs))
+        listIDs=dict.fromkeys(listIDs,[])
+    elif taxon_name is not None and fileListIDs is None:
+        listIDs = getSeq.getTaxonRunIDs(taxon_name, os.path.join(workdir, 'IDs_list.seqFromWebTaxon.tab'))
+        listIDs = dict.fromkeys(listIDs, [])
+
+    if len(listIDs) == 0:
+        sys.exit('No samples were found')
+
+    return listIDs, searched_fastq_files
 
 
 def ivrTyper(args, time):
 
     number_samples_successfully = 0
 
-    #creating work directory if necessary
+    # creating work directory if necessary
     workdir = os.path.abspath(args.workdir)
     if not os.path.isdir(workdir):
         os.makedirs(workdir)
+
+    # Start logger
+    sys.stdout = utils.Logger(workdir, time)
 
     #Script path, setting environment variables and reference path
     script_path = os.path.abspath(sys.argv[0])
@@ -30,17 +52,47 @@ def ivrTyper(args, time):
     asperaKey = os.path.abspath(args.asperaKey.name) if args.asperaKey is not None else None
 
     #load reads file paths
-    sample_data = utils.getReadsFiles(workdir)
+    #TODO - implement getSeqENA
+    #sample_data = utils.getReadsFiles(workdir)
+    sample_data, searched_fastq_files = getListIDs(workdir, args.listIDs.name if args.listIDs is not None else None,
+                                               args.taxon)
+
+    '''if not searched_fastq_files:
+
+        sample_data={}
+
+        for sample in listIDs:
+            workdir_sample = os.path.join(workdir, sample)
+            if not os.path.isdir(workdir_sample):
+                os.makedirs(workdir_sample)
+            # Download Files
+            out = download.runDownload(sample,'PAIRED',asperaKey, workdir_sample,False, args.threads,'ILLUMINA')
+
+            sample_data[sample]=out[1]
+
+    else:
+        sample_data = listIDs'''
+
+
     samples_total_number = len(sample_data)
 
-    if samples_total_number == 0:
-        sys.exit('No samples found.')
-
-    #Run typing algorithm
+    #Run download if necessary and typing algorithm for each sample
     for sample, files in sorted(sample_data.items()):
+
         print(utils.bcolors.HEADER + '\n-> ' + sample + '\n' + utils.bcolors.ENDC)
+
+        if not searched_fastq_files:
+            workdir_sample = os.path.join(workdir, sample)
+            if not os.path.isdir(workdir_sample):
+                os.makedirs(workdir_sample)
+            # Download Files
+            out = download.runDownload(sample, 'PAIRED', asperaKey, workdir_sample, False, args.threads, 'ILLUMINA')
+
+            files = out[1]
+
         success = runTyper.alignSamples(sample, files, reference, args.threads, workdir, script_path, args.keepFiles,
                                     args.minCoverage, args.proportionCutOff, time)
+
         if success:
             number_samples_successfully+=1
 
@@ -87,10 +139,10 @@ def main():
     parser_optional_download_exclusive.add_argument('-l', '--listIDs', type=argparse.FileType('r'),
                                                     metavar='/path/to/list_IDs.txt',
                                                     help='Path to list containing the IDs to be downloaded (one per line)',
-                                                    required=False)
+                                                    required=False, default=None)
     parser_optional_download_exclusive.add_argument('-t', '--taxon', type=str, metavar='"Streptococcus agalactiae"',
                                                     help='Taxon name for which fastq files will be downloaded',
-                                                    required=False)
+                                                    required=False, default=None)
 
     args = parser.parse_args()
 
@@ -99,9 +151,6 @@ def main():
 
     general_start_time = time.time()
     time_str = time.strftime("%Y%m%d-%H%M%S")
-
-    # Start logger
-    sys.stdout = utils.Logger(args.workdir, time_str)
 
     print(utils.bcolors.HEADER + '\n' + "_,.-'``'-.,_,.='`` irvTyper ``'-.,_,.-'``'-.,_")
     print('\n' '-- ivr locus determination from paired-end genomic data --' + utils.bcolors.ENDC)

@@ -6,7 +6,6 @@ import shutil
 
 
 def writeReport(workdir, sample, time, module1_reads, module2_reads, proportions):
-    #TODO - it's a bit sloppy
 
     fname=os.path.join(workdir, "report_" + time + ".csv")
     toWrite = [sample] + module1_reads + module2_reads + proportions
@@ -14,10 +13,10 @@ def writeReport(workdir, sample, time, module1_reads, module2_reads, proportions
     if not os.path.isfile(fname):
         with open(fname, "w") as report:
             report.write("Sample,1.1,1.2,2.1,2.2,2.3,pA,pB,pE,pD,pC,pF\n")
-            report.write(','.join(toWrite))
+            report.write(','.join(toWrite)+'\n')
     else:
         with open(fname, "a") as report:
-            report.write(','.join(toWrite))
+            report.write(','.join(toWrite)+'\n')
 
 
 def getType(workdir,sample, module1, module2, minCoverage):
@@ -182,8 +181,8 @@ def getSeq_moduleTwo(first_type, bamfile, threads, workdir, script_path, sample)
 
     elif first_type == '1.2':
         iter = pysam_fullRef.fetch('CP000410_extraction_-_Type_I_RM_system_locus', 4462 - 1, 4861 - 1)
-        matePairs_conserved = pysam.AlignmentFile(sample + "_matepairs_conserved_module2.bam", "wb",
-                                                  template=pysam_fullRef)
+        matePairs_conserved = pysam.AlignmentFile(os.path.join(workdir, sample + "_matepairs_conserved_module2.bam"),
+                                                               "wb", template=pysam_fullRef)
 
         #TODO - remove verification...
         for x in iter:
@@ -198,15 +197,15 @@ def getSeq_moduleTwo(first_type, bamfile, threads, workdir, script_path, sample)
         matePairs_conserved.close()
 
         # TODO - this looks ugly..
-        runSortAlignment, bamFile3 = utils.sortAlignment(os.path.join(workdir,
-                                                         sample + "_matepairs_conserved_module2.bam"),
-                                                         os.path.join(workdir, sample +
-                                                         "_matepairs_conserved_module2.bam"),
-                                                         False, threads, False)
-        utils.indexAlignment(bamFile3, False)
-        utils.bam2fastq(bamFile3, False)
+        runSortAlignment, bamFile_1_2 = utils.sortAlignment(os.path.join(workdir,
+                                                                         sample + "_matepairs_conserved_module2.bam"),
+                                                            os.path.join(workdir,
+                                                                         sample + "_matepairs_conserved_module2.bam"),
+                                                            False, threads, False)
+        utils.indexAlignment(bamFile_1_2, False)
+        utils.bam2fastq(bamFile_1_2, False)
 
-        run, module2, report2= typeSeq_moduleTwo([bamFile3 + '.fastq'], threads, workdir, script_path)
+        run, module2, report2 = typeSeq_moduleTwo([bamFile_1_2 + '.fastq'], threads, workdir, script_path)
 
         return run, module2, report2
 
@@ -262,14 +261,14 @@ def typeSeq_moduleOne(files, threads, workdir, script_path, minCoverage, proport
             print(utils.bcolors.OKGREEN + "\n\t- Only 1.2 module found with {} reads. Using it as new target.".format(
                 readCount_1_2) + utils.bcolors.ENDC)
             module1 = {'1.2': int(readCount_1_2)}
-            toWrite=[0,str(readCount_1_2)]
+            toWrite=['0',str(readCount_1_2)]
             return True, module1, toWrite
 
         elif readCount_1_2 < minCoverage:
             print(utils.bcolors.OKGREEN +"\n\t- Only 1.1 module found with {} reads. Using it as new target.".format(
                 readCount_1_1) + utils.bcolors.ENDC)
             module1 = {'1.1': int(readCount_1_1)}
-            toWrite=[str(readCount_1_1), 0]
+            toWrite=[str(readCount_1_1), '0']
             return True, module1, toWrite
         else:
             toWrite=[str(readCount_1_1),str(readCount_1_2)]

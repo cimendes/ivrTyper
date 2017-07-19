@@ -2,6 +2,10 @@ import shlex
 import os, sys
 import subprocess
 from threading import Timer
+import shutil
+import pickle
+import functools
+
 
 class bcolors:
     #The entire table of ANSI color codes - https://gist.github.com/chrisopedia/8754917
@@ -131,35 +135,6 @@ def setPATHvariable(doNotUseProvidedSoftware, script_path):
     print '\n'
 
 
-def getReadsFiles(workdir):
-
-    sample_data={}
-
-    for sample in os.listdir(workdir):
-        if os.path.isdir(os.path.join(workdir,sample)):
-            sample_files = os.listdir(os.path.join(workdir,sample))
-
-            sample_file_foward = None
-            sample_file_reverse = None
-
-            for file in sample_files:
-                if file.endswith('_R1_001.fastq.gz') or file.endswith('_1.fastq.gz') or file.endswith(
-                   '_R1_001.fq.gz') or file.endswith('_1.fq.gz'):
-                    sample_file_foward = os.path.join(workdir, sample, file)
-                    # print sample_file_foward
-                elif file.endswith('_R1_002.fastq.gz') or file.endswith('_2.fastq.gz') or file.endswith(
-                    '_R1_002.fq.gz') or file.endswith('_2.fq.gz'):
-                    sample_file_reverse = os.path.join(workdir, sample, file)
-                    # print sample_file_reverse
-            if sample_file_foward == None or sample_file_reverse == None:
-                print (bcolors.WARNING + 'WARNING: No files found for ' + sample + bcolors.ENDC)
-            else:
-                sample_data[sample] = [sample_file_foward,sample_file_reverse]
-
-
-    return sample_data
-
-
 def runCommandPopenCommunicate(command, shell_True, timeout_sec_None, print_comand_True):
     run_successfully = False
     if not isinstance(command, basestring):
@@ -221,3 +196,36 @@ class Logger(object):
     def getLogFile(self):
         return self.logfile
 
+
+def trace_unhandled_exceptions(func):
+	@functools.wraps(func)
+	def wrapped_func(*args, **kwargs):
+		try:
+			func(*args, **kwargs)
+		except:
+			print 'Exception in ' + func.__name__
+			traceback.print_exc()
+	return wrapped_func
+
+
+def rchop(string, ending):
+	if string.endswith(ending):
+		string = string[:-len(ending)]
+	return string
+
+
+def removeDirectory(directory):
+	if os.path.isdir(directory):
+		shutil.rmtree(directory)
+
+
+def saveVariableToPickle(variableToStore, outdir, prefix):
+	pickleFile = os.path.join(outdir, str(prefix + '.pkl'))
+	with open(pickleFile, 'wb') as writer:
+		pickle.dump(variableToStore, writer)
+
+
+def extractVariableFromPickle(pickleFile):
+	with open(pickleFile, 'rb') as reader:
+		variable = pickle.load(reader)
+	return variable
