@@ -8,9 +8,10 @@ import modules.utils as utils
 import modules.runTyper as runTyper
 import modules.getSeqFromENA as getSeq
 import modules.download as download
+import shutil
 
 
-version = '0.5'
+version = '0.6'
 
 def getListIDs(workdir, fileListIDs, taxon_name):
     searched_fastq_files = False
@@ -57,23 +58,6 @@ def ivrTyper(args, time):
     sample_data, searched_fastq_files = getListIDs(workdir, args.listIDs.name if args.listIDs is not None else None,
                                                args.taxon)
 
-    '''if not searched_fastq_files:
-
-        sample_data={}
-
-        for sample in listIDs:
-            workdir_sample = os.path.join(workdir, sample)
-            if not os.path.isdir(workdir_sample):
-                os.makedirs(workdir_sample)
-            # Download Files
-            out = download.runDownload(sample,'PAIRED',asperaKey, workdir_sample,False, args.threads,'ILLUMINA')
-
-            sample_data[sample]=out[1]
-
-    else:
-        sample_data = listIDs'''
-
-
     samples_total_number = len(sample_data)
 
     #Run download if necessary and typing algorithm for each sample
@@ -95,6 +79,9 @@ def ivrTyper(args, time):
 
         if success:
             number_samples_successfully+=1
+
+        if (not searched_fastq_files) and (not args.keepDownloadFiles) and (not args.keepFiles):
+            shutil.rmtree(os.path.join(workdir, sample), ignore_errors=True)
 
     return number_samples_successfully, samples_total_number
 
@@ -132,15 +119,15 @@ def main():
                                           'the path to Private-key file asperaweb_id_dsa.openssh must be provided '
                                           '(normaly found in ~/.aspera/connect/etc/asperaweb_id_dsa.openssh).',
                                           required=False)
-    #parser_optional_download.add_argument('-k', '--keepDownloadedFastq', action='store_true',
-    #                                      help='Tells ReMatCh to keep the fastq files downloaded')
+    parser_optional_download.add_argument('-kd', '--keepDownloadFiles', action='store_true',
+                                          help='Keep downloaded read files', required=False, default=False)
 
     parser_optional_download_exclusive = parser.add_mutually_exclusive_group()
     parser_optional_download_exclusive.add_argument('-l', '--listIDs', type=argparse.FileType('r'),
                                                     metavar='/path/to/list_IDs.txt',
                                                     help='Path to list containing the IDs to be downloaded (one per line)',
                                                     required=False, default=None)
-    parser_optional_download_exclusive.add_argument('-t', '--taxon', type=str, metavar='"Streptococcus agalactiae"',
+    parser_optional_download_exclusive.add_argument('-t', '--taxon', type=str, metavar='"Streptococcus pneumoniae"',
                                                     help='Taxon name for which fastq files will be downloaded',
                                                     required=False, default=None)
 
@@ -152,7 +139,7 @@ def main():
     general_start_time = time.time()
     time_str = time.strftime("%Y%m%d-%H%M%S")
 
-    print(utils.bcolors.HEADER + '\n' + "_,.-'``'-.,_,.='`` irvTyper ``'-.,_,.-'``'-.,_")
+    print(utils.bcolors.HEADER + '\n' + "> irvTyper ")
     print('\n' '-- ivr locus determination from paired-end genomic data --' + utils.bcolors.ENDC)
 
     #run ivrTyper
