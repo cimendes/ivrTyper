@@ -198,34 +198,42 @@ class Logger(object):
 
 
 def trace_unhandled_exceptions(func):
-	@functools.wraps(func)
-	def wrapped_func(*args, **kwargs):
-		try:
-			func(*args, **kwargs)
-		except:
-			print 'Exception in ' + func.__name__
-			traceback.print_exc()
-	return wrapped_func
+    @functools.wraps(func)
+    def wrapped_func(*args, **kwargs):
+        try:
+            func(*args, **kwargs)
+        except:
+            print 'Exception in ' + func.__name__
+            traceback.print_exc()
+    return wrapped_func
 
 
 def rchop(string, ending):
-	if string.endswith(ending):
-		string = string[:-len(ending)]
-	return string
+    if string.endswith(ending):
+        string = string[:-len(ending)]
+    return string
 
 
 def removeDirectory(directory):
-	if os.path.isdir(directory):
-		shutil.rmtree(directory)
+    if os.path.isdir(directory):
+        shutil.rmtree(directory)
 
 
 def saveVariableToPickle(variableToStore, outdir, prefix):
-	pickleFile = os.path.join(outdir, str(prefix + '.pkl'))
-	with open(pickleFile, 'wb') as writer:
-		pickle.dump(variableToStore, writer)
+    pickleFile = os.path.join(outdir, str(prefix + '.pkl'))
+    with open(pickleFile, 'wb') as writer:
+        pickle.dump(variableToStore, writer)
 
 
 def extractVariableFromPickle(pickleFile):
-	with open(pickleFile, 'rb') as reader:
-		variable = pickle.load(reader)
-	return variable
+    with open(pickleFile, 'rb') as reader:
+        variable = pickle.load(reader)
+    return variable
+
+
+def RepresentsFloat(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False

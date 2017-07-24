@@ -7,12 +7,33 @@ import shutil
 
 def writeReport(workdir, sample, time, module1_reads, module2_reads, proportions):
 
+    alleles=['A','B','E','D','C','F']
+
     fname=os.path.join(workdir, "report_" + time + ".csv")
-    toWrite = [sample] + module1_reads + module2_reads + proportions
+
+    maxP=0
+    for p in proportions:
+        if utils.RepresentsFloat(p):
+            if float(p)>maxP:
+                maxP = float(p)
+
+    classifier = 'NA'
+    if maxP == 0:
+        classifier = 'NT'
+    elif proportions.count(str(maxP)) > 1:
+        mix_alleles=[]
+        for i in range(proportions.count(str(maxP))):
+            mix_alleles.append(alleles[proportions.index(str(maxP),i)])
+        classifier =' '.join(mix_alleles)
+    else:
+        classifier = alleles[proportions.index(str(maxP))]
+
+    toWrite = [sample] + module1_reads + module2_reads + proportions + [classifier]
 
     if not os.path.isfile(fname):
         with open(fname, "w") as report:
-            report.write("Sample,1.1,1.2,2.1,2.2,2.3,pA,pB,pE,pD,pC,pF\n")
+            report.write("Sample,1.1,1.2,2.1,2.2,2.3,pA,pB,pE,pD,pC,pF,Most Prevalent\n")
+
             report.write(','.join(toWrite)+'\n')
     else:
         with open(fname, "a") as report:

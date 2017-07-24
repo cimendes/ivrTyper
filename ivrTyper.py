@@ -11,7 +11,7 @@ import modules.download as download
 import shutil
 
 
-version = '0.6'
+version = '0.6.1'
 
 def getListIDs(workdir, fileListIDs, taxon_name):
     searched_fastq_files = False
