@@ -21,9 +21,14 @@ def writeReport(workdir, sample, time, module1_reads, module2_reads, proportions
     if maxP == 0:
         classifier = 'NT'
     elif proportions.count(str(maxP)) > 1:
-        mix_alleles=[]
+        mix_alleles = []
+        #print proportions.count(str(maxP))
+        start = 0
         for i in range(proportions.count(str(maxP))):
-            mix_alleles.append(alleles[proportions.index(str(maxP),i)])
+            mix_alleles.append(alleles[proportions.index(str(maxP),start)])
+            start = proportions.index(str(maxP),start) + 1
+
+        #print mix_alleles
         classifier =' '.join(mix_alleles)
     else:
         classifier = alleles[proportions.index(str(maxP))]
@@ -114,7 +119,7 @@ def typeSeq_moduleTwo(files, threads, workdir, script_path):
 
     # 2.1
     runMapping, samFile1 = utils.mappingBowtie2(files, os.path.join(os.path.dirname(script_path), 'src', 'seq',
-                                                '2.1.fasta'), threads, workdir, False, 1, None, True, "2.1")
+                                                '2.1.fasta'), threads, workdir, False, 1, '--seed 42', True, "2.1")
     if runMapping:
         runSortAlignment, bamFile1 = utils.sortAlignment(samFile1, str(os.path.splitext(samFile1)[0] + '.bam'), False,
                                                          threads, False)
@@ -130,7 +135,7 @@ def typeSeq_moduleTwo(files, threads, workdir, script_path):
 
     # 2.2
     runMapping, samFile2 = utils.mappingBowtie2(files, os.path.join(os.path.dirname(script_path), 'src', 'seq',
-                                                '2.2.fasta'), threads, workdir, False, 1, None, True, "2.2")
+                                                '2.2.fasta'), threads, workdir, False, 1, '--seed 42', True, "2.2")
     if runMapping:
         runSortAlignment, bamFile2 = utils.sortAlignment(samFile2, str(os.path.splitext(samFile2)[0] + '.bam'), False,
                                                          threads, False)
@@ -146,7 +151,7 @@ def typeSeq_moduleTwo(files, threads, workdir, script_path):
 
     # 2.3
     runMapping, samFile3 = utils.mappingBowtie2(files, os.path.join(os.path.dirname(script_path), 'src', 'seq',
-                                                '2.3.fasta'), threads, workdir, False, 1, None, True, "2.3")
+                                                '2.3.fasta'), threads, workdir, False, 1, '--seed 42', True, "2.3")
     if runMapping:
         runSortAlignment, bamFile3 = utils.sortAlignment(samFile3, str(os.path.splitext(samFile3)[0] + '.bam'), False,
                                                          threads, False)
@@ -242,7 +247,7 @@ def typeSeq_moduleOne(files, threads, workdir, script_path, minCoverage, proport
 
     #1.1
     runMapping, samFile1 = utils.mappingBowtie2(files, os.path.join(os.path.dirname(script_path), 'src', 'seq',
-                                                '1.1.fasta'), threads, workdir, False, 1, None, True, "1.1")
+                                                '1.1.fasta'), threads, workdir, False, 1, '--seed 42', True, "1.1")
     if runMapping:
         runSortAlignment, bamFile1 = utils.sortAlignment(samFile1, str(os.path.splitext(samFile1)[0] + '.bam'), False,
                                                          threads, False)
@@ -258,7 +263,7 @@ def typeSeq_moduleOne(files, threads, workdir, script_path, minCoverage, proport
 
     #1.2
     runMapping, samFile2 = utils.mappingBowtie2(files, os.path.join(os.path.dirname(script_path), 'src', 'seq',
-                                                '1.2.fasta'), threads, workdir, True, 1, None, True, "1.2")
+                                                '1.2.fasta'), threads, workdir, True, 1, '--seed 42', True, "1.2")
     if runMapping:
         runSortAlignment, bamFile2 = utils.sortAlignment(samFile2, str(os.path.splitext(samFile2)[0] + '.bam'), False,
                                                          threads, False)
@@ -321,7 +326,7 @@ def alignSamples(sampleName, sampleFiles, reference, threads, workdir, script_pa
     if not os.path.isdir(newWorkdir):
         os.makedirs(newWorkdir)
 
-    runMapping, samFile_fullRef = utils.mappingBowtie2(sampleFiles, reference, threads, newWorkdir, False, 1, None,
+    runMapping, samFile_fullRef = utils.mappingBowtie2(sampleFiles, reference, threads, newWorkdir, False, 1, '--seed 42',
                                                        True, sampleName)
 
     if runMapping:

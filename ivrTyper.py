@@ -11,7 +11,7 @@ import modules.download as download
 import shutil
 
 
-version = '0.6.1'
+version = '0.6.2'
 
 def getListIDs(workdir, fileListIDs, taxon_name):
     searched_fastq_files = False
@@ -70,7 +70,8 @@ def ivrTyper(args, time):
             if not os.path.isdir(workdir_sample):
                 os.makedirs(workdir_sample)
             # Download Files
-            out = download.runDownload(sample, 'PAIRED', asperaKey, workdir_sample, False, args.threads, 'ILLUMINA')
+            out = download.runDownload(sample, 'PAIRED', asperaKey, workdir_sample, False, args.threads, 'ILLUMINA',
+                                       args.platformModel)
 
             files = out[1]
 
@@ -121,6 +122,9 @@ def main():
                                           required=False)
     parser_optional_download.add_argument('-kd', '--keepDownloadFiles', action='store_true',
                                           help='Keep downloaded read files', required=False, default=False)
+    parser_optional_download.add_argument('-pm', '--platformModel', type=str, metavar='HiSeq', help='Filter '
+                                          'download by the model of the illumina machine.', choices=['HiSeq', 'MiSeq',
+                                          'None'], required=False, default=None)
 
     parser_optional_download_exclusive = parser.add_mutually_exclusive_group()
     parser_optional_download_exclusive.add_argument('-l', '--listIDs', type=argparse.FileType('r'),
@@ -140,7 +144,7 @@ def main():
     time_str = time.strftime("%Y%m%d-%H%M%S")
 
     print(utils.bcolors.HEADER + '\n' + "> irvTyper ")
-    print('\n' '-- ivr locus determination from paired-end genomic data --' + utils.bcolors.ENDC)
+    print('\n' '\t- ivr locus determination from paired-end genomic data' + utils.bcolors.ENDC)
 
     #run ivrTyper
     number_samples_successfully, samples_total_number = ivrTyper(args, time_str)

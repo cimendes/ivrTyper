@@ -384,7 +384,8 @@ def rename_move_files(list_files, new_name, outdir, download_paired_type):
     return run_successfully, list_new_files
 
 
-def runDownload(ena_id, download_paired_type, asperaKey, outdir, download_cram_bam_True, threads, instrument_platform):
+def runDownload(ena_id, download_paired_type, asperaKey, outdir, download_cram_bam_True, threads,
+                instrument_platform, instrument_model):
     download_dir = os.path.join(outdir, ena_id, '')
     utils.removeDirectory(download_dir)
     os.mkdir(download_dir)
@@ -408,17 +409,19 @@ def runDownload(ena_id, download_paired_type, asperaKey, outdir, download_cram_b
             if download_paired_type.lower() == 'both' or (
                     sequencingInformation['library_layout'] is not None and sequencingInformation[
                 'library_layout'].lower() == download_paired_type.lower()):
-                run_successfully, cram_index_run_successfully = downloadFiles(downloadInformation, asperaKey,
-                                                                              download_dir, download_cram_bam_True)
-                if run_successfully:
-                    run_successfully, downloaded_files = get_fastq_files(download_dir, cram_index_run_successfully,
-                                                                         threads,
-                                                                         sequencingInformation['library_layout'])
-                if run_successfully and downloaded_files is not None:
-                    run_successfully, downloaded_files = rename_move_files(downloaded_files,
-                                                                           sequencingInformation['run_accession'],
-                                                                           outdir,
-                                                                           sequencingInformation['library_layout'])
+                if instrument_model is None or instrument_model.lower() in sequencingInformation[
+                    'instrument_model'].lower():
+                    run_successfully, cram_index_run_successfully = downloadFiles(downloadInformation, asperaKey,
+                                                                                  download_dir, download_cram_bam_True)
+                    if run_successfully:
+                        run_successfully, downloaded_files = get_fastq_files(download_dir, cram_index_run_successfully,
+                                                                             threads,
+                                                                             sequencingInformation['library_layout'])
+                    if run_successfully and downloaded_files is not None:
+                        run_successfully, downloaded_files = rename_move_files(downloaded_files,
+                                                                               sequencingInformation['run_accession'],
+                                                                               outdir,
+                                                                               sequencingInformation['library_layout'])
 
     utils.removeDirectory(download_dir)
 
