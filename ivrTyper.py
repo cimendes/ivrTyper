@@ -11,7 +11,7 @@ import modules.download as download
 import shutil
 
 
-version = '0.6.2'
+version = '0.6.3'
 
 def getListIDs(workdir, fileListIDs, taxon_name):
     searched_fastq_files = False
@@ -44,6 +44,8 @@ def ivrTyper(args, time):
     # Start logger
     sys.stdout = utils.Logger(workdir, time)
 
+    print '\n' + 'COMMAND: ' + ' '.join(sys.argv) + '\n'
+
     #Script path, setting environment variables and reference path
     script_path = os.path.abspath(sys.argv[0])
     utils.setPATHvariable(args.skipProvidedSoftware, script_path)
@@ -53,8 +55,6 @@ def ivrTyper(args, time):
     asperaKey = os.path.abspath(args.asperaKey.name) if args.asperaKey is not None else None
 
     #load reads file paths
-    #TODO - implement getSeqENA
-    #sample_data = utils.getReadsFiles(workdir)
     sample_data, searched_fastq_files = getListIDs(workdir, args.listIDs.name if args.listIDs is not None else None,
                                                args.taxon)
 
@@ -76,7 +76,7 @@ def ivrTyper(args, time):
             files = out[1]
 
         success = runTyper.alignSamples(sample, files, reference, args.threads, workdir, script_path, args.keepFiles,
-                                    args.minCoverage, args.proportionCutOff, time)
+                                    args.minCoverage, args.proportionCutOff, time, args.greaterThan)
 
         if success:
             number_samples_successfully+=1
@@ -112,6 +112,9 @@ def main():
                                           required=False, default=5)
     parser_optional_ivrTyper.add_argument('-c','--proportionCutOff', type=float, metavar='N', help='Proportion cut off '
                                           'for the module 1.x to be chosen as target', required=False, default=0.8)
+    parser_optional_ivrTyper.add_argument('-gt', '--greaterThan', type=float, metavar='N', help='proportion cut off '
+                                          'for the "greater than" column in the final report.', required=False,
+                                          default=0.5)
 
     parser_optional_download = parser.add_argument_group('Download facultative options')
     parser_optional_download.add_argument('-a', '--asperaKey', type=argparse.FileType('r'),

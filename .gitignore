@@ -2,9 +2,10 @@
 .bam
 .bai
 .fastq
-.idea/
 .pyc
 modules/.pyc
 .txt
 
+/utils/
+.idea/
 

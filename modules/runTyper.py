@@ -5,21 +5,31 @@ import pysam
 import shutil
 
 
-def writeReport(workdir, sample, time, module1_reads, module2_reads, proportions):
+def writeReport(workdir, sample, time, module1_reads, module2_reads, proportions, threshold, minCoverage, proportionCutOff):
 
     alleles=['A','B','E','D','C','F']
 
     fname=os.path.join(workdir, "report_" + time + ".csv")
 
     maxP=0
+    gt_t=0
     for p in proportions:
         if utils.RepresentsFloat(p):
             if float(p)>maxP:
                 maxP = float(p)
+    if maxP >  threshold:
+        gt_t = maxP
 
-    classifier = 'NA'
     if maxP == 0:
         classifier = 'NT'
+        if all(int(i) < minCoverage for i in module1_reads): # and any(i > minCoverage for i in module1_reads):
+            classifier = 'NT - module 1 absent'
+        else:
+            if 'NA' not in module2_reads and all(int(i) < minCoverage for i in module2_reads):
+                classifier = 'NT - module 2 absent'
+            elif all(int(i) > minCoverage for i in module1_reads) and all(i == 'NA' for i in module2_reads):
+                classifier = 'NT - inconclusive module 1 '
+
     elif proportions.count(str(maxP)) > 1:
         mix_alleles = []
         #print proportions.count(str(maxP))
@@ -28,16 +38,25 @@ def writeReport(workdir, sample, time, module1_reads, module2_reads, proportions
             mix_alleles.append(alleles[proportions.index(str(maxP),start)])
             start = proportions.index(str(maxP),start) + 1
 
-        #print mix_alleles
         classifier =' '.join(mix_alleles)
     else:
         classifier = alleles[proportions.index(str(maxP))]
 
-    toWrite = [sample] + module1_reads + module2_reads + proportions + [classifier]
+    gt_allele='NT'
+    if gt_t != 0:
+        alleles_gt = []
+        start = 0
+        for i in range(proportions.count(str(gt_t))):
+            alleles_gt.append(alleles[proportions.index(str(gt_t),start)])
+            start = proportions.index(str(gt_t),start) + 1
+        gt_allele = ' '.join(alleles_gt)
+
+
+    toWrite = [sample] + module1_reads + module2_reads + proportions + [classifier] + [gt_allele]
 
     if not os.path.isfile(fname):
         with open(fname, "w") as report:
-            report.write("Sample,1.1,1.2,2.1,2.2,2.3,pA,pB,pE,pD,pC,pF,Most Prevalent\n")
+            report.write("Sample,1.1,1.2,2.1,2.2,2.3,pA,pB,pE,pD,pC,pF,Most Prevalent, gt" + str(threshold) + "\n")
 
             report.write(','.join(toWrite)+'\n')
     else:
@@ -96,6 +115,7 @@ def getType(workdir,sample, module1, module2, minCoverage):
         else:
             print(utils.bcolors.WARNING + "Coverage on the 2.2 module below the minCoverage {} read "
                                           "threshold.\n".format(minCoverage) + utils.bcolors.ENDC)
+            toWrite[4] = '0'
 
         if module2['2.3'] >= minCoverage:
             pF = utils.getProportionsModule2(module2, '2.3')
@@ -275,26 +295,26 @@ def typeSeq_moduleOne(files, threads, workdir, script_path, minCoverage, proport
                 print(utils.bcolors.BOLD + "\t-> Module 1.2 - {} reads".format(readCount_1_2) + utils.bcolors.ENDC)
     else:
         print(utils.bcolors.FAIL + "Failed 1.2 Bowtie mapping" + utils.bcolors.ENDC)
-        return False, readCount_1_2, None
+        return False, readCount_1_2, ['Fail']*2
 
     if readCount_1_1 < minCoverage and readCount_1_2 < minCoverage:
         print(utils.bcolors.FAIL + "\n\t- Coverage on the 1.1 and 1.2 modules below the minCoverage {} read threshold. "
                                    "This sample cannot be typed.".format(minCoverage) + utils.bcolors.ENDC)
-        return False, None, None
+        return False, None, [str(readCount_1_1), str(readCount_1_2)]
 
     else:
         if readCount_1_1 < minCoverage:
-            print(utils.bcolors.OKGREEN + "\n\t- Only 1.2 module found with {} reads. Using it as new target.".format(
+            print(utils.bcolors.OKGREEN + "\n\t- 1.2 module found with {} reads. Using it as new target.".format(
                 readCount_1_2) + utils.bcolors.ENDC)
             module1 = {'1.2': int(readCount_1_2)}
-            toWrite=['0',str(readCount_1_2)]
+            toWrite=[str(readCount_1_1),str(readCount_1_2)]
             return True, module1, toWrite
 
         elif readCount_1_2 < minCoverage:
-            print(utils.bcolors.OKGREEN +"\n\t- Only 1.1 module found with {} reads. Using it as new target.".format(
+            print(utils.bcolors.OKGREEN +"\n\t- 1.1 module found with {} reads. Using it as new target.".format(
                 readCount_1_1) + utils.bcolors.ENDC)
             module1 = {'1.1': int(readCount_1_1)}
-            toWrite=[str(readCount_1_1), '0']
+            toWrite=[str(readCount_1_1), str(readCount_1_2)]
             return True, module1, toWrite
         else:
             toWrite=[str(readCount_1_1),str(readCount_1_2)]
@@ -302,23 +322,23 @@ def typeSeq_moduleOne(files, threads, workdir, script_path, minCoverage, proport
             p_1_1 = utils.getProportionsModule1(module1, '1.1')
             p_1_2 = utils.getProportionsModule1(module1, '1.2')
             if p_1_1 >= proportionCutOff:
-                print(utils.bcolors.OKGREEN + "\n\t- Chosing 1.1 module as new target, with {} reads (proportion = "
+                print(utils.bcolors.OKGREEN + "\n\t- Choosing 1.1 module as new target, with {} reads (proportion = "
                       "{})".format(readCount_1_1, p_1_1) + utils.bcolors.ENDC)
                 del module1['1.2']
                 return True, module1, toWrite
             elif p_1_2 >= proportionCutOff:
-                print(utils.bcolors.OKGREEN + "\n\t- Chosing 1.2 module as new target, with {} reads (proportion = "
+                print(utils.bcolors.OKGREEN + "\n\t- Choosing 1.2 module as new target, with {} reads (proportion = "
                       "{}".format(readCount_1_2, p_1_2) + utils.bcolors.ENDC)
                 del module1['1.1']
                 return True, module1, toWrite
             else:
                 print(utils.bcolors.FAIL + "\n\t- Inconclusive results on the 1.x module! Sample cannot be typed."
                       + utils.bcolors.ENDC)
-                return False, None, None
+                return False, None, toWrite
 
 
 def alignSamples(sampleName, sampleFiles, reference, threads, workdir, script_path, keepFiles, minCoverage,
-                 proportionCutOff, time):
+                 proportionCutOff, time, greaterThan):
 
     success = False
 
@@ -368,6 +388,7 @@ def alignSamples(sampleName, sampleFiles, reference, threads, workdir, script_pa
                 utils.bam2fastq(bam_matepairs, False)
 
                 print(utils.bcolors.BOLD + "\n--> Mapping Module 1" + utils.bcolors.ENDC)
+
                 success1, module1, report1 = typeSeq_moduleOne([bam_matepairs+'.fastq'], threads, newWorkdir,
                                                           script_path, minCoverage, proportionCutOff)
                 if success1:
@@ -380,10 +401,22 @@ def alignSamples(sampleName, sampleFiles, reference, threads, workdir, script_pa
 
                         if successTyping:
                             success = True
-                            writeReport(workdir, sampleName, time, report1, report2, report3)
+                            writeReport(workdir, sampleName, time, report1, report2, report3, greaterThan,
+                                        minCoverage, proportionCutOff)
+                        else:
+                            writeReport(workdir, sampleName, time, report1, report2, ['NA'] * 6, greaterThan,
+                                        minCoverage, proportionCutOff)
+                    else:
+                        writeReport(workdir, sampleName, time, report1, report2, ['NA'] * 6, greaterThan, minCoverage,
+                                    proportionCutOff)
+                else:
+                    writeReport(workdir, sampleName, time, report1, ['NA'] * 3, ['NA'] * 6, greaterThan, minCoverage,
+                                proportionCutOff)
+    else:
+        writeReport(workdir, sampleName, time, ['NA']*2, ['NA']*3, ['NA']*6, greaterThan, minCoverage, proportionCutOff)
 
     if not keepFiles:
-        #TODO - this is STILL not removing /tmp/ folder
+        #TODO - this is STILL not removing /tmp/ folder in windows
         shutil.rmtree(newWorkdir+'/', ignore_errors=True)
         if os.path.exists(newWorkdir) and not os.listdir(newWorkdir):
             os.remove(newWorkdir)
