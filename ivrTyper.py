@@ -11,7 +11,7 @@ import modules.download as download
 import shutil
 
 
-version = '0.6.3'
+version = '0.6.4'
 
 def getListIDs(workdir, fileListIDs, taxon_name):
     searched_fastq_files = False
@@ -70,19 +70,27 @@ def ivrTyper(args, time):
             if not os.path.isdir(workdir_sample):
                 os.makedirs(workdir_sample)
             # Download Files
-            out = download.runDownload(sample, 'PAIRED', asperaKey, workdir_sample, False, args.threads, 'ILLUMINA',
-                                       args.platformModel)
+            out = download.runDownload(sample, 'PAIRED', asperaKey, workdir_sample, False, args.threads,
+                                       args.instrumentPlatform, args.platformModel, args.librarySource)
 
-            files = out[1]
+            if out[0]: #run successfully
 
-        success = runTyper.alignSamples(sample, files, reference, args.threads, workdir, script_path, args.keepFiles,
+                files = out[1]
+
+                success = runTyper.alignSamples(sample, files, reference, args.threads, workdir, script_path, args.keepFiles,
                                     args.minCoverage, args.proportionCutOff, time, args.greaterThan)
 
-        if success:
-            number_samples_successfully+=1
+                if success:
+                    number_samples_successfully+=1
 
-        if (not searched_fastq_files) and (not args.keepDownloadFiles) and (not args.keepFiles):
-            shutil.rmtree(os.path.join(workdir, sample), ignore_errors=True)
+            else:
+                print "Download information doesn't match requirements. Requiring  pair-end samples from {}, {}, " \
+                      "and sample is {}, {}, {}.".format(args.instrumentPlatform, args.platformModel,
+                                                       out[2]['library_layout'], out[2]['instrument_platform'],
+                                                       out[2]['instrument_model'])
+
+            if (not searched_fastq_files) and (not args.keepDownloadFiles) and (not args.keepFiles):
+                shutil.rmtree(os.path.join(workdir, sample), ignore_errors=True)
 
     return number_samples_successfully, samples_total_number
 
@@ -125,9 +133,15 @@ def main():
                                           required=False)
     parser_optional_download.add_argument('-kd', '--keepDownloadFiles', action='store_true',
                                           help='Keep downloaded read files', required=False, default=False)
+    parser_optional_download.add_argument('-ip', '--instrumentPlatform', type=str, metavar='ILLUMINA', help='Download '
+                                          'files with specific library layout (available options: %(choices)s)',
+                                          choices=['ILLUMINA', 'ALL'], required=False, default='ALL')
     parser_optional_download.add_argument('-pm', '--platformModel', type=str, metavar='HiSeq', help='Filter '
-                                          'download by the model of the illumina machine.', choices=['HiSeq', 'MiSeq',
+                                          'download by the model of the Illumina machine.', choices=['HiSeq', 'MiSeq',
                                           'None'], required=False, default=None)
+    parser_optional_download.add_argument('-ls', '--librarySource',type=str, metavar='GENOMIC', help='Filter '
+                                          'download by library source (available options: %(choices)s)', choices=['GENOMIC', 'ALL'],
+                                          required=False, default=None)
 
     parser_optional_download_exclusive = parser.add_mutually_exclusive_group()
     parser_optional_download_exclusive.add_argument('-l', '--listIDs', type=argparse.FileType('r'),
@@ -142,6 +156,8 @@ def main():
 
     if args.workdir is None:
         parser.error('A directory containing at least one paired-end sample should be provided to --workdir.')
+    if args.platformModel is not None and args.instrumentPlatform is not 'ILLUMINA':
+        parser.error("To use the --platformModel option, the --instrumentPlatform must be set as 'ILLUMINA'")
 
     general_start_time = time.time()
     time_str = time.strftime("%Y%m%d-%H%M%S")

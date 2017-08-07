@@ -17,6 +17,7 @@ def runTyper(args):
 
     initialWorkdir = os.path.abspath(args.initialWorkdir)
 
+
     files_required = get_files_required(initialWorkdir)
 
     samples_run = get_samples_run(files_required['report']['file'])
@@ -105,15 +106,19 @@ def get_rematch_command(log_file):
     with open(log_file, 'rtU') as reader:
         for line in reader:
             if any([isinstance(value, bool) for value in variables.values()]):
-                line = line.splitlines()[0]
+                #line = line.splitlines()[0]
                 if len(line) > 0:
-                    if line == 'COMMAND:':
+                    if 'COMMAND:' in line:
+                        print line
                         variables['command'] = True
                     elif line == 'PRESENT DIRECTORY:':
                         variables['directory'] = True
                     else:
                         if variables['command'] is True:
                             variables['command'] = line.split(' ')
+                            print line
+                            print line.split(' ')
+                            print variables['command']
                         elif variables['directory'] is True:
                             variables['directory'] = line
             else:
@@ -158,6 +163,7 @@ def get_rematch_command(log_file):
             else:
                 command['command'].append(variables['command'][counter])
             counter += 1
+    print command['command'], command['listIDs'], command['taxon'], command['threads'], variables['directory']
     return command['command'], command['listIDs'], command['taxon'], command['threads'], variables['directory']
 
 
