@@ -4,6 +4,7 @@
 .fastq
 .pyc
 modules/.pyc
+utils/.pyc
 .txt
 
 .idea/

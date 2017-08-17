@@ -5,11 +5,15 @@ import pysam
 import shutil
 
 
-def writeReport(workdir, sample, time, module1_reads, module2_reads, proportions, threshold, minCoverage, proportionCutOff):
+def writeReport(workdir, sample, time, module1_reads, module2_reads, proportions, threshold, minCoverage,
+                proportionCutOff, reportFile):
+
+    fname = os.path.join(workdir, "report_" + time + ".csv")
+
+    if reportFile is not None:
+        fname = reportFile.name
 
     alleles=['A','B','E','D','C','F']
-
-    fname=os.path.join(workdir, "report_" + time + ".csv")
 
     maxP=0
     gt_t=0
@@ -54,13 +58,13 @@ def writeReport(workdir, sample, time, module1_reads, module2_reads, proportions
 
     toWrite = [sample] + module1_reads + module2_reads + proportions + [classifier] + [gt_allele]
 
-    if not os.path.isfile(fname):
+    if os.path.isfile(fname):
+        with open(fname, "a") as report:
+            report.write(','.join(toWrite)+'\n')
+    else:
         with open(fname, "w") as report:
             report.write("Sample,1.1,1.2,2.1,2.2,2.3,pA,pB,pE,pD,pC,pF,Most Prevalent, gt" + str(threshold) + "\n")
 
-            report.write(','.join(toWrite)+'\n')
-    else:
-        with open(fname, "a") as report:
             report.write(','.join(toWrite)+'\n')
 
 
@@ -338,7 +342,7 @@ def typeSeq_moduleOne(files, threads, workdir, script_path, minCoverage, proport
 
 
 def alignSamples(sampleName, sampleFiles, reference, threads, workdir, script_path, keepFiles, minCoverage,
-                 proportionCutOff, time, greaterThan):
+                 proportionCutOff, time, greaterThan, reportFile):
 
     success = False
 
@@ -402,18 +406,19 @@ def alignSamples(sampleName, sampleFiles, reference, threads, workdir, script_pa
                         if successTyping:
                             success = True
                             writeReport(workdir, sampleName, time, report1, report2, report3, greaterThan,
-                                        minCoverage, proportionCutOff)
+                                        minCoverage, proportionCutOff, reportFile)
                         else:
                             writeReport(workdir, sampleName, time, report1, report2, ['NA'] * 6, greaterThan,
-                                        minCoverage, proportionCutOff)
+                                        minCoverage, proportionCutOff, reportFile)
                     else:
                         writeReport(workdir, sampleName, time, report1, report2, ['NA'] * 6, greaterThan, minCoverage,
-                                    proportionCutOff)
+                                    proportionCutOff, reportFile)
                 else:
                     writeReport(workdir, sampleName, time, report1, ['NA'] * 3, ['NA'] * 6, greaterThan, minCoverage,
-                                proportionCutOff)
+                                proportionCutOff, reportFile)
     else:
-        writeReport(workdir, sampleName, time, ['NA']*2, ['NA']*3, ['NA']*6, greaterThan, minCoverage, proportionCutOff)
+        writeReport(workdir, sampleName, time, ['NA']*2, ['NA']*3, ['NA']*6, greaterThan, minCoverage,
+                    proportionCutOff, reportFile)
 
     if not keepFiles:
         #TODO - this is STILL not removing /tmp/ folder in windows

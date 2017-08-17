@@ -80,7 +80,7 @@ def getSequencingInformation(readRunInfo):
 
 @utils.trace_unhandled_exceptions
 def downloadWithAspera(aspera_file_path, asperaKey, outdir, pickle_prefix):
-    command = ['ascp', '-QT', '-l', '300m', '-i', asperaKey, str('era-fasp@' + aspera_file_path), outdir]
+    command = ['ascp', '-QT', '-l', '300m', '-P33001', '-i', asperaKey, str('era-fasp@' + aspera_file_path), outdir]
     run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, 3600, True)
 
     utils.saveVariableToPickle(run_successfully, outdir, str(pickle_prefix + '.' + aspera_file_path.rsplit('/', 1)[1]))
@@ -385,7 +385,7 @@ def rename_move_files(list_files, new_name, outdir, download_paired_type):
 
 
 def runDownload(ena_id, download_paired_type, asperaKey, outdir, download_cram_bam_True, threads,
-                instrument_platform, instrument_model,library_source):
+                instrument_platform, instrument_model, library_source):
     download_dir = os.path.join(outdir, ena_id, '')
     utils.removeDirectory(download_dir)
     os.mkdir(download_dir)
@@ -422,8 +422,8 @@ def runDownload(ena_id, download_paired_type, asperaKey, outdir, download_cram_b
                         if run_successfully and downloaded_files is not None:
                             run_successfully, downloaded_files = rename_move_files(downloaded_files,
                                                                                    sequencingInformation['run_accession'],
-                                                                                   outdir,
-                                                                                   sequencingInformation['library_layout'])
+                                                                                   outdir, sequencingInformation[
+                                                                                       'library_layout'])
 
     utils.removeDirectory(download_dir)
 

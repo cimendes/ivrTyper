@@ -11,7 +11,7 @@ import modules.download as download
 import shutil
 
 
-version = '0.6.4'
+version = '0.6.5'
 
 def getListIDs(workdir, fileListIDs, taxon_name):
     searched_fastq_files = False
@@ -78,7 +78,7 @@ def ivrTyper(args, time):
                 files = out[1]
 
                 success = runTyper.alignSamples(sample, files, reference, args.threads, workdir, script_path, args.keepFiles,
-                                    args.minCoverage, args.proportionCutOff, time, args.greaterThan)
+                                    args.minCoverage, args.proportionCutOff, time, args.greaterThan, args.reportFile)
 
                 if success:
                     number_samples_successfully+=1
@@ -91,6 +91,14 @@ def ivrTyper(args, time):
 
             if (not searched_fastq_files) and (not args.keepDownloadFiles) and (not args.keepFiles):
                 shutil.rmtree(os.path.join(workdir, sample), ignore_errors=True)
+        else:
+            success = runTyper.alignSamples(sample, files, reference, args.threads, workdir, script_path,
+                                            args.keepFiles,
+                                            args.minCoverage, args.proportionCutOff, time, args.greaterThan,
+                                            args.reportFile)
+
+            if success:
+                number_samples_successfully += 1
 
     return number_samples_successfully, samples_total_number
 
@@ -123,6 +131,9 @@ def main():
     parser_optional_ivrTyper.add_argument('-gt', '--greaterThan', type=float, metavar='N', help='proportion cut off '
                                           'for the "greater than" column in the final report.', required=False,
                                           default=0.5)
+    parser_optional_ivrTyper.add_argument('-rf', '--reportFile',type=argparse.FileType('r'),
+                                          metavar='/path/to/run.*.log', help='Logfile to append run information to.',
+                                          required = False)
 
     parser_optional_download = parser.add_argument_group('Download facultative options')
     parser_optional_download.add_argument('-a', '--asperaKey', type=argparse.FileType('r'),
@@ -155,7 +166,10 @@ def main():
     args = parser.parse_args()
 
     if args.workdir is None:
-        parser.error('A directory containing at least one paired-end sample should be provided to --workdir.')
+        if args.listIDs is None:
+            parser.error('A directory containing at least one paired-end sample should be provided to --workdir.')
+        else:
+            parser.error('A directory to store the output should be provided to --workdir.')
     if args.platformModel is not None and args.instrumentPlatform is not 'ILLUMINA':
         parser.error("To use the --platformModel option, the --instrumentPlatform must be set as 'ILLUMINA'")
 

@@ -181,9 +181,10 @@ def kill_subprocess_Popen(subprocess_Popen, command):
 
 class Logger(object):
     def __init__(self, out_directory, time_str):
+
         self.logfile = os.path.join(out_directory, str('run.' + time_str + '.log'))
         self.terminal = sys.stdout
-        self.log = open(self.logfile, "w")
+        self.log = open(self.logfile, "a")
 
     def write(self, message):
         self.terminal.write(message)
