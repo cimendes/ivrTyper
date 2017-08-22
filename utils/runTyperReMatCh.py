@@ -2,7 +2,7 @@
 
 import os
 import sys
-sys.path.append("..")
+sys.path.insert(0,'..')
 import time
 import argparse
 import shutil
