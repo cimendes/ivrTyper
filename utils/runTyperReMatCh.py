@@ -7,7 +7,6 @@ import time
 import argparse
 import shutil
 import glob
-import xml.etree.ElementTree as ET
 import modules.getSeqFromENA as getSeq
 import modules.download as download
 import modules.utils as utils
