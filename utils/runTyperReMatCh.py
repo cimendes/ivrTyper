@@ -100,6 +100,9 @@ def main():
                                                     required=False, default=None)
     parser_optional_general.add_argument('-j', '--threads', type=int, metavar='N', help='Number of threads to use',
                                          required=False, default=1)
+    parser_optional_general.add_argument('-s', '--serotyper', choices=['PneumoCaT', 'seroBA', 'all'], type=str,
+                                         metavar='PneumoCaT', help='Serotype software to be used  (available options:'
+                                         ' %(choices)s)', required=False, default='PneumoCaT')
 
     parser_optional_download = parser.add_argument_group('Download facultative options')
     parser_optional_download.add_argument('-a', '--asperaKey', type=argparse.FileType('r'),

@@ -5,7 +5,7 @@ import argparse
 import subprocess
 import time
 
-version = '0.1'
+version = '1.0'
 
 
 def runTyper(args):
@@ -20,9 +20,10 @@ def runTyper(args):
 
     files_required = get_files_required(initialWorkdir)
 
+
     samples_run = get_samples_run(files_required['report']['file'])
 
-    command, list_ids, taxon, threads, initial_present_directory = get_rematch_command(files_required['run']['file'])
+    command, list_ids, taxon, threads, initial_present_directory = get_command(files_required['run']['file'])
 
     if list_ids is not None:
         total_samples = getListIDs_fromFile(list_ids)
@@ -32,12 +33,10 @@ def runTyper(args):
         samples_fastq = searchFastqFiles(initialWorkdir)
         total_samples = samples_fastq.keys()
 
-    samples_to_run = list(set(total_samples).symmetric_difference(set(
-        sum(samples_run.values(), []) if not args.runFailedSamples else samples_run[
-            'True'] if 'True' in samples_run else [''])))
+    samples_to_run = list(set(total_samples) - set(samples_run))
 
     print str(len(samples_to_run)) + ' samples out of ' + str(
-        len(total_samples)) + ' will be analysed by ReMatCh' + '\n'
+        len(total_samples)) + ' will be analysed by ivrTyper' + '\n'
 
     if list_ids is not None or taxon:
         samples_to_run_file = write_samples_to_run(samples_to_run, workdir)
@@ -49,15 +48,16 @@ def runTyper(args):
     if list_ids is not None or taxon:
         command.extend(['-l', samples_to_run_file])
 
-    print 'ReMatCh will start in 5 seconds...'
+    print 'ivrTyper will start in 5 seconds...'
     time.sleep(5)
 
     os.chdir(initial_present_directory)
-    subprocess.call(command)
+    print command
+    subprocess.call(command[1:])
 
 
 def write_samples_to_run(samples_to_run, workdir):
-    samples_to_run_file = os.path.join(workdir, 'restart_rematch.samples_to_run.txt')
+    samples_to_run_file = os.path.join(workdir, 'restart_ivrTyper.samples_to_run.txt')
     with open(samples_to_run_file, 'wt') as writer:
         for sample in samples_to_run:
             writer.write(sample + '\n')
@@ -90,39 +90,27 @@ def get_samples_run(sample_report_file):
     with open(sample_report_file, 'rtU') as reader:
         for line in reader:
             sample_info = line.split(',')[0]
-            if len(sample_info) > 0:
-                if not line.startswith('Sample'):
-                    #sample_info = line.split('\t')
-                    if sample_info not in samples_run:
-                        samples_run.append(sample_info)
-                        #samples_run[sample_info] = []
-                    #samples_run[sample_info[1]].append(sample_info[0])
+            if len(sample_info) > 0: #line is not empty
+                if not line.startswith('Sample') and sample_info not in samples_run:
+                    samples_run.append(sample_info)
+
     return samples_run
 
 
-def get_rematch_command(log_file):
-    print log_file
+def get_command(log_file):
     variables = {'command': False, 'directory': False}
+
     with open(log_file, 'rtU') as reader:
         for line in reader:
             if any([isinstance(value, bool) for value in variables.values()]):
-                #line = line.splitlines()[0]
                 if len(line) > 0:
                     if 'COMMAND:' in line:
-                        print line
-                        variables['command'] = True
-                    elif line == 'PRESENT DIRECTORY:':
-                        variables['directory'] = True
-                    else:
-                        if variables['command'] is True:
-                            variables['command'] = line.split(' ')
-                            print line
-                            print line.split(' ')
-                            print variables['command']
-                        elif variables['directory'] is True:
-                            variables['directory'] = line
+                        variables['command'] = line.split(' ')
+                    elif 'PRESENT DIRECTORY:' in line:
+                        variables['directory'] = line.split(' ')[-1].strip()
             else:
                 break
+
     command = {'command': [], 'listIDs': None, 'taxon': False, 'threads': None}
     if all([not isinstance(value, bool) for value in variables.values()]):
         counter = 0
@@ -137,20 +125,6 @@ def get_rematch_command(log_file):
                     elif variables['command'][counter] in ('-j', '--threads'):
                         command['threads'] = int(variables['command'][counter + 1])
                         counter += 1
-                    elif variables['command'][counter] == '--mlst':
-                        species = []
-                        counter += 1
-                        while counter < len(variables['command']) and not variables['command'][counter].startswith('-'):
-                            if len(variables['command'][counter]) > 0:
-                                species.append(variables['command'][counter])
-                            counter += 1
-                        command['command'].extend(['--mlst', ' '.join(species)])
-                    else:
-                        command['command'].append(variables['command'][counter])
-                        if counter + 1 < len(variables['command']) and not variables['command'][counter + 1].startswith(
-                                '-'):
-                            command['command'].append(variables['command'][counter + 1])
-                            counter += 1
                 else:
                     command['taxon'] = True
                     for i in range(counter, len(variables['command'])):
@@ -163,7 +137,7 @@ def get_rematch_command(log_file):
             else:
                 command['command'].append(variables['command'][counter])
             counter += 1
-    print command['command'], command['listIDs'], command['taxon'], command['threads'], variables['directory']
+
     return command['command'], command['listIDs'], command['taxon'], command['threads'], variables['directory']
 
 
@@ -266,9 +240,7 @@ def main():
                                          default='.')
     parser_optional_general.add_argument('-j', '--threads', type=int, metavar='N',
                                          help='New number of threads to use instead', required=False)
-    #parser_optional_general.add_argument('--runFailedSamples', action='store_true',
-    #                                     help='Will run ReMatCh for those samples missing, as well as for samples
-    # that did not run successfully in initial ReMatCh run')
+
 
     args = parser.parse_args()
 
