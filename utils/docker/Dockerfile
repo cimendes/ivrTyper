@@ -13,7 +13,7 @@ RUN apt-get install -y python-dev python-pip
 RUN pip2 install pysam==0.11.2.2
 
 # --- ReMatCh ---
-RUN git clone https://github.com/B-UMMI/ReMatCh.git -b base_quality_filter
+RUN git clone https://github.com/B-UMMI/ReMatCh.git
 ENV PATH="/NGStools/ReMatCh:${PATH}"
 
 # --- ivrTyper ---
