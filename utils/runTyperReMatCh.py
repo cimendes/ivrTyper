@@ -14,7 +14,7 @@ import modules.getSeqFromENA as getSeq
 import modules.download as download
 import modules.utils as utils
 
-version = '1.0'
+version = '0.9'
 
 def runIVRTyper(workdir_sample,threads,ivrReport,asperaKey):
 
@@ -78,6 +78,31 @@ def runPneumoCaT(reads_sample, workdir_sample):
         files[1][0] = newname
 
     command = ['PneumoCaT.py', '-1', files[0][0], '-2', files[1][0], '-o', workdir_sample, '--cleanup']
+
+    run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, None, True)
+
+    return run_successfully
+
+def runSEroBA(reads_sample, workdir_sample):
+
+    files = [None, None]
+
+    files[0] = glob.glob(os.path.join(reads_sample + '/' + "*_1.fq.gz"))
+    if len(files[0]) != 1:
+        files[0] = glob.glob(os.path.join(reads_sample + '/' + "*_1.fastq.gz"))
+        if len(files[0]) != 1:
+            print "Error finding read file 1"
+            return False
+
+
+    files[1] = glob.glob(os.path.join(reads_sample + '/' + "*_2.fq.gz"))
+    if len(files[1]) != 1:
+        files[1] = glob.glob(os.path.join(reads_sample + '/' + "*_2.fastq.gz"))
+        if len(files[1]) != 1:
+            print "Error finding read file 2"
+            return False
+
+    command = ['seroba', 'runSerotyping', 'seroba/database', files[0][0], files[1][0], workdir_sample]
 
     run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, None, True)
 
@@ -158,7 +183,15 @@ def main():
 
     errorReport = os.path.join(workdir, "status_" + time_str + ".csv")
     with open(errorReport, "w") as error:
-        error.write("Sample,Download,ivrTyper,ReMatCh_locus,ReMatCh_mlst,PneumoCaT\n")
+        if args.serotyper.lower() == 'pneumocat':
+            error.write("Sample,Download,ivrTyper,ReMatCh_locus,ReMatCh_mlst,PneumoCaT\n")
+        elif args.serotyper.lower() == 'seroba':
+            error.write("Sample,Download,ivrTyper,ReMatCh_locus,ReMatCh_mlst,seroBA\n")
+        elif args.serotyper.lower() == 'all':
+            error.write("Sample,Download,ivrTyper,ReMatCh_locus,ReMatCh_mlst,PneumoCaT,seroBA\n")
+        else:
+            print "You must indicate a serotyping software with the option -s from the provided options (" \
+                          "PneumoCaT or seroBA)"
 
     for sample in IDs:
 
@@ -178,7 +211,15 @@ def main():
                                                                      None)
 
         if download_successfully:
-            status=['PASS','FAIL','FAIL','FAIL','FAIL']
+            status=['PASS','FAIL','FAIL','FAIL']
+            if args.serotyper.lower() == 'all':
+                status+=['FAIL','FAIL']
+            else:
+                if args.serotyper.lower()=='pneumocat' or args.serotyper.lower()=='seroba':
+                    status+=['FAIL']
+                else:
+                    print "You must indicate a serotyping software with the option -s from the provided options (" \
+                          "PneumoCaT or seroBA)"
 
             try:
                 success_ivrTyper = runIVRTyper(workdir_sample,args.threads,ivrReport,asperaKey)
@@ -237,35 +278,46 @@ def main():
                 print "Error running ReMatCh for mlst"
                 status[3] = 'FAIL'
 
-            try:
-                success_pneumoCaT = runPneumoCaT(download_workdir, workdir_sample)
+            if args.serotyper.lower() == 'pneumocat' or args.serotyper.lower() == 'all':
+                try:
+                    success_pneumoCaT = runPneumoCaT(download_workdir, workdir_sample)
 
-                if success_pneumoCaT:
-                    pneumocatXML = glob.glob(os.path.join(workdir_sample + '/' + "*.results.xml"))
+                    if success_pneumoCaT:
+                        pneumocatXML = glob.glob(os.path.join(workdir_sample + '/' + "*.results.xml"))
 
-                    if pneumocatXML >= 1:
-                        with open(pneumocatXML[-1], 'r') as xmlRepot:
-                            Serotype = 'NA'
-                            QC_coverage = 'NA'
-                            for line in xmlRepot:
-                                if '"Serotype"' in line:
-                                    Serotype = line.split('value=')[1].replace('>','').strip()
-                                elif '"QC_coverage"' in line:
-                                    QC_coverage = line.split('value=')[1].replace('/','').replace('>','').strip()
+                        if pneumocatXML >= 1:
+                            with open(pneumocatXML[-1], 'r') as xmlRepot:
+                                Serotype = 'NA'
+                                QC_coverage = 'NA'
+                                for line in xmlRepot:
+                                    if '"Serotype"' in line:
+                                        Serotype = line.split('value=')[1].replace('>','').strip()
+                                    elif '"QC_coverage"' in line:
+                                        QC_coverage = line.split('value=')[1].replace('/','').replace('>','').strip()
 
-                            with open(pneumocatReport,'a') as pneumoCaT_file:
-                                pneumoCaT_file.write(sample + '\t' + Serotype + '\t' + QC_coverage + '\n')
+                                with open(pneumocatReport,'a') as pneumoCaT_file:
+                                    pneumoCaT_file.write(sample + '\t' + Serotype + '\t' + QC_coverage + '\n')
 
-                            status[4] = 'PASS'
+                                status[4] = 'PASS'
+                        else:
+                            print "No PneumoCaT report for {}".format(sample)
+                            status[4]='ERROR'
                     else:
-                        print "No PneumoCaT report for {}".format(sample)
-                        status[4]='ERROR'
-                else:
+                        print "Error running PneumoCaT"
+                        status[4] = 'FAIL'
+                except:
                     print "Error running PneumoCaT"
                     status[4] = 'FAIL'
-            except:
-                print "Error running PneumoCaT"
-                status[4] = 'FAIL'
+
+            if args.serotyper.lower() == 'seroba' or args.serotyper.lower == 'all':
+                try:
+                    success_seroBA = runSEroBA(download_workdir, workdir_sample)
+                except:
+                    print "Error running seroBA"
+                    if args.serotyper.lower == 'all':
+                        status[5] = 'FAIL'
+                    else:
+                        status[4] = 'FAIL'
 
             with open(errorReport, 'a') as statusReport:
                 statusReport.write('\t'.join(status)+'\n')
