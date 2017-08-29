@@ -17,7 +17,7 @@ RUN git clone https://github.com/B-UMMI/ReMatCh.git
 ENV PATH="/NGStools/ReMatCh:${PATH}"
 
 # --- ivrTyper ---
-RUN git https://github.com/cimendes/ivrTyper.git
+RUN git clone https://github.com/cimendes/ivrTyper.git
 ENV PATH="/NGStools/ivrTyper:${PATH}"
 
 # --- pneumoCaT Dependencies ---
