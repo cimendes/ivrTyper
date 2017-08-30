@@ -19,6 +19,7 @@ ENV PATH="/NGStools/ReMatCh:${PATH}"
 # --- ivrTyper ---
 RUN git clone https://github.com/cimendes/ivrTyper.git
 ENV PATH="/NGStools/ivrTyper:${PATH}"
+ENV PATH="/NGStools/ivrTyper/utils:${PATH}"
 
 # --- pneumoCaT Dependencies ---
 RUN apt-get install -y make gcc libxml2-dev libxslt1-dev zlib1g-dev g++ build-essential libncurses5-dev libncursesw5-dev
