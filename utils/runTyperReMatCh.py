@@ -16,36 +16,28 @@ import modules.utils as utils
 
 version = '0.9'
 
-def runIVRTyper(workdir_sample,threads,ivrReport,asperaKey):
+def runIVRTyper(workdir_sample,threads,ivrReport):
 
     command = ['ivrTyper.py', '--workdir', workdir_sample, '--threads',str(threads), '--reportFile', ivrReport]
-
-    if asperaKey is not None:
-        command += ['--asperaKey', asperaKey]
 
     run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, None, True)
 
     return run_successfully
 
-def runReMatCH_ivr(workdir_sample,threads,asperaKey, script_path):
+def runReMatCH_ivr(workdir_sample,threads, script_path):
 
     reference = os.path.join(os.path.dirname(script_path),'src', 'seq', 'SpnD39III_plus_flanking.fasta')
     command = ['rematch.py', '--w', workdir_sample, '-j', str(threads), '-r', reference, '--reportSequenceCoverage',
                '--minGeneCoverage', '30', '--minGeneIdentity', '80']
 
-    if asperaKey is not None:
-        command += ['--asperaKey', asperaKey]
 
     run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, None, True)
 
     return run_successfully
 
-def runReMatCH_mlst(workdir_sample,threads,asperaKey):
+def runReMatCH_mlst(workdir_sample,threads):
     command = ['rematch.py', '--w', workdir_sample, '-j', str(threads), '--mlst', '"Streptococcus pneumoniae"',
                '--mlstConsensus', 'noMatter', '--mlstReference']
-
-    if asperaKey is not None:
-        command += ['--asperaKey', asperaKey]
 
     run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, None, True)
 
@@ -222,7 +214,7 @@ def main():
                           "PneumoCaT or seroBA)"
 
             try:
-                success_ivrTyper = runIVRTyper(workdir_sample,args.threads,ivrReport,asperaKey)
+                success_ivrTyper = runIVRTyper(workdir_sample,args.threads,ivrReport)
 
                 if success_ivrTyper:
                     status[1]='PASS'
@@ -235,7 +227,7 @@ def main():
                 status[1] = 'FAIL'
 
             try:
-                success_rematch_locus = runReMatCH_ivr(workdir_sample,args.threads,asperaKey, script_path)
+                success_rematch_locus = runReMatCH_ivr(workdir_sample,args.threads, script_path)
 
                 if success_rematch_locus:
                     locusFile = glob.glob(os.path.join(workdir_sample + '/' + "combined_report.data_by_gene.first_run.sequence_coverage.*"))
@@ -258,7 +250,7 @@ def main():
                 status[2] = 'FAIL'
 
             try:
-                success_rematch_mlst =runReMatCH_mlst(workdir_sample,args.threads,asperaKey)
+                success_rematch_mlst =runReMatCH_mlst(workdir_sample,args.threads)
 
                 if success_rematch_mlst:
                     mlstFile=glob.glob(os.path.join(workdir_sample + '/' + "mlst_report*"))
