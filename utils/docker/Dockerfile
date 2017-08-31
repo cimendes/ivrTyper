@@ -39,6 +39,6 @@ RUN git clone https://github.com/phe-bioinformatics/PneumoCaT.git
 ENV PATH="/NGStools/PneumoCaT:${PATH}"
 
 # Clean
-RUN apt-get remove -y wget make gcc libxml2-dev libxslt1-dev zlib1g-dev g++ build-essential libncurses5-dev libncursesw5-dev && apt-get autoclean -y
+RUN apt-get remove -y make gcc libxml2-dev libxslt1-dev zlib1g-dev g++ build-essential libncurses5-dev libncursesw5-dev && apt-get autoclean -y
 
 WORKDIR /data/
