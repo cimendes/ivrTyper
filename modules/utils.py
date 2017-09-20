@@ -107,6 +107,7 @@ def sortAlignment(alignment_file, output_file, sortByName_True, threads, write_c
     if sortByName_True:
         command[6] = '-n'
     run_successfully, stdout, stderr = runCommandPopenCommunicate(command, False, None, write_command)
+
     if not run_successfully:
         output_file = None
     return run_successfully, output_file

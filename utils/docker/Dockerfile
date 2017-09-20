@@ -20,6 +20,8 @@ ENV PATH="/NGStools/ReMatCh:${PATH}"
 RUN git clone https://github.com/cimendes/ivrTyper.git
 ENV PATH="/NGStools/ivrTyper:${PATH}"
 ENV PATH="/NGStools/ivrTyper/utils:${PATH}"
+#fixing permissions for ivrTyper executables
+RUN chmod +x /NGStools/ivrTyper/src/bcftools-1.3.1/bin/* && chmod +x /NGStools/ivrTyper/src/bowtie2-2.2.9/* && chmod +x /NGStools/ivrTyper/src/samtools-1.3.1/bin/*
 
 # --- pneumoCaT Dependencies ---
 RUN apt-get install -y make gcc libxml2-dev libxslt1-dev zlib1g-dev g++ build-essential libncurses5-dev libncursesw5-dev
@@ -39,6 +41,6 @@ RUN git clone https://github.com/phe-bioinformatics/PneumoCaT.git
 ENV PATH="/NGStools/PneumoCaT:${PATH}"
 
 # Clean
-#RUN apt-get remove -y make gcc libxml2-dev libxslt1-dev zlib1g-dev g++ build-essential libncurses5-dev libncursesw5-dev && apt-get autoclean -y
+RUN apt-get remove -y make gcc libxml2-dev libxslt1-dev zlib1g-dev g++ build-essential libncurses5-dev libncursesw5-dev && apt-get autoclean -y
 
 WORKDIR /data/

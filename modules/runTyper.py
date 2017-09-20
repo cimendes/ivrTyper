@@ -352,10 +352,9 @@ def alignSamples(sampleName, sampleFiles, reference, threads, workdir, script_pa
 
     runMapping, samFile_fullRef = utils.mappingBowtie2(sampleFiles, reference, threads, newWorkdir, False, 1, '--seed 42',
                                                        True, sampleName)
-
     if runMapping:
         runSortAlignment, bamFile_fullRef = utils.sortAlignment(samFile_fullRef, str(os.path.splitext(samFile_fullRef)[0]
-                                                                               + '.bam'), False, threads, False)
+                                                                               + '.bam'), False, threads, True)
         if runSortAlignment:
             runIndex = utils.indexAlignment(bamFile_fullRef, False)
             if runIndex:
