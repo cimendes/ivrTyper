@@ -9,9 +9,11 @@ This is a dockerfile for using INNUca, with all dependencies already installed.
 
 Within this container you can find:
 - ubuntu:16.04
+- git
 - Python v2.7
 - pysam v0.11.2.2
-- [ivrTyper](https://github.com/cimendes/ivrTyper.git) latest version in master
+- [ReMatCh](https://github.com/B-UMMI/ReMatCh) v3.2
+- [ivrTyper](https://github.com/cimendes/ivrTyper.git) v0.4.6
 
 ### Using play-with-docker
 [![Try in PWD](https://cdn.rawgit.com/play-with-docker/stacks/cff22438/assets/images/button.png)](http://labs.play-with-docker.com/)
@@ -36,7 +38,7 @@ For this, docker needs to be installed on your machine. Instructions for this ca
 2) `docker build -t ivrTyper ./ivrTyper/Docker/`
 
 ### Run (using automated build image)
-    docker run --rm -it -v /local/folder/fastq_data:/data/ cimendes/ivrTyper ivrTyper.py --workdir /data/ --threads 8
+    docker run --rm -u $(id -u):$(id -g) -it -v /local/folder/fastq_data:/data/ cimendes/ivrTyper ivrTyper.py --workdir /data/ --threads 8
 
 
 Contact

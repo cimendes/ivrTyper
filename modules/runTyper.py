@@ -354,7 +354,7 @@ def alignSamples(sampleName, sampleFiles, reference, threads, workdir, script_pa
                                                        True, sampleName)
     if runMapping:
         runSortAlignment, bamFile_fullRef = utils.sortAlignment(samFile_fullRef, str(os.path.splitext(samFile_fullRef)[0]
-                                                                               + '.bam'), False, threads, True)
+                                                                               + '.bam'), False, threads, False)
         if runSortAlignment:
             runIndex = utils.indexAlignment(bamFile_fullRef, False)
             if runIndex:
