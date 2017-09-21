@@ -50,6 +50,8 @@ def ivrTyper(args, time):
 
     print '\n' + 'PRESENT DIRECTORY: ' + os.path.abspath(os.getcwd()) + '\n'
 
+    print '\n' + 'VERSION: ' + version + '\n'
+
     #Script path, setting environment variables and reference path
     script_path = os.path.abspath(sys.argv[0])
     utils.setPATHvariable(args.skipProvidedSoftware, script_path)
