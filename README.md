@@ -33,7 +33,7 @@ Required to run analysis:
 - Bcftools = v1.3.1
 
 (these three executables are provided, but user's own executables can be used by providing --doNotUseProvidedSoftware option)
-- pysam >= 1.11.2.2 (available though pip)
+- pysam >= 0.11.2.2 (available though pip)
 - python 2.7
 
 
