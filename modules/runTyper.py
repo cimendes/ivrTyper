@@ -30,13 +30,13 @@ def writeReport(workdir, sample, time, module1_reads, module2_reads, proportions
             classifier = 'NT - module 1 absent'
         else:
             if 'NA' not in module2_reads and all(int(i) < minCoverage for i in module2_reads):
-                classifier = 'NT - module 2 absent'
+                module1='1.1' if int(module1_reads[0])>int(module1_reads[1]) else '1.2'
+                classifier = 'NT - module 2 absent with %s module' % (module1)
             elif all(int(i) > minCoverage for i in module1_reads) and all(i == 'NA' for i in module2_reads):
                 classifier = 'NT - inconclusive module 1 '
 
     elif proportions.count(str(maxP)) > 1:
         mix_alleles = []
-        #print proportions.count(str(maxP))
         start = 0
         for i in range(proportions.count(str(maxP))):
             mix_alleles.append(alleles[proportions.index(str(maxP),start)])

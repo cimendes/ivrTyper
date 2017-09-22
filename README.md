@@ -25,12 +25,10 @@ The number of mates that map to the 1.x module is obtained though the conserved 
 
 Required to download sequence data from ENA database:
 - Aspera Connect 2 >= v3.6.1
-- gzip >= v1.6 (normally found in Linux OS) (important for bam/cram conversion into fastq)
 
 Required to run analysis:
 - Bowtie2 >= v2.2.9
 - Samtools = v1.3.1
-- Bcftools = v1.3.1
 
 (these three executables are provided, but user's own executables can be used by providing --doNotUseProvidedSoftware option)
 - pysam >= 1.11.2.2 (available though pip)
