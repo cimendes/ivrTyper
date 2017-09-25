@@ -1,7 +1,7 @@
 # ivrTyper
 -- ivr locus allele determination from genomic data --
 
-The *ivr locus*, also known as *cod locus*, is a random six-phase switch in a Type I restriction-modification system.
+The *ivr* locus, also known as *cod locus*, is a random six-phase switch in a Type I restriction-modification system.
 It has been shown to be the responsible underlying mechanism for phase-variation in *streptococcus pneumonia* (Manso et al, 2014).
 
 There are six possible alleles, identified from A to E:
