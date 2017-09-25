@@ -43,8 +43,9 @@ Required to run analysis:
 #### Usage
 
     usage: ivrTyper.py [-h] [--version] -w /path/to/workdir/directory/ [-j N] [-u]
-                       [-k] [-m N] [-c N] [-a /path/to/asperaweb_id_dsa.openssh]
-                       [-kd]
+                       [-k] [-m N] [-c N] [-gt N] [-rf /path/to/run.*.log]
+                       [-a /path/to/asperaweb_id_dsa.openssh] [-kd] [-ip ILLUMINA]
+                       [-pm HiSeq] [-ls GENOMIC]
                        [-l /path/to/list_IDs.txt | -t "Streptococcus pneumoniae"]
 
     Reads mapping against pneumococcal ivr locus for typing.
@@ -77,6 +78,11 @@ Required to run analysis:
       -c N, --proportionCutOff N
                             Proportion cut off for the module 1.x to be chosen as
                             target (default: 0.8)
+      -gt N, --greaterThan N
+                            proportion cut off for the "greater than" column in
+                            the final report. (default: 0.5)
+      -rf /path/to/run.*.log, --reportFile /path/to/run.*.log
+                            Logfile to append run information to. (default: None)
 
     Download facultative options:
       -a /path/to/asperaweb_id_dsa.openssh, --asperaKey /path/to/asperaweb_id_dsa.openssh
@@ -88,7 +94,15 @@ Required to run analysis:
                             (default: None)
       -kd, --keepDownloadFiles
                             Keep downloaded read files (default: False)
-
+      -ip ILLUMINA, --instrumentPlatform ILLUMINA
+                            Download files with specific library layout (available
+                            options: ILLUMINA, ALL) (default: ALL)
+      -pm HiSeq, --platformModel HiSeq
+                            Filter download by the model of the Illumina machine.
+                            (default: None)
+      -ls GENOMIC, --librarySource GENOMIC
+                            Filter download by library source (available options:
+                            GENOMIC, ALL) (default: None)
 
 #### Running ivrTyper
 
@@ -105,14 +119,19 @@ It is advisable to use copied fastq files or symbolic links to the original ones
       fastq_file_b_R2_001.fastq.gz
 ```
 
+`ivrTyper.py --workdir /path/to/data/ --threads 8`
+
 ###### - With specific ENA sequencing data
 To run ivrTyper in a specific set of ENA IDs, provide a file to `--listIDs` containing a list of ENA IDs that will be downloaded. This tool requires the genomic data to be paired-end and from Illumina technology.
 ReMatCh will store the output files in the `--workdir`.
+`ivrTyper.py --listIDs /path/to/list_IDs.txt --workdir /path/to/output/directory/  --threads 8`
 
 ###### - With ENA sequencing data of *streptococcus pneumoniae* taxon
 To run ivrTyper in all ENA data of a given taxon, provide the taxon name to `--taxon`.
 The ENA Run Accession numbers for the given taxon will be stored in IDs_list.seqFromWebTaxon.tab file.
-Warning - This is option is untested.
+Warning - This is option is in development.
+`ivrTyper.py --taxon "Streptococcus pneumoniae" --workdir /path/to/output/directory/  --threads 8`
+
 
 
 #### Output
@@ -134,6 +153,8 @@ Report for the samples that ran the ivrTyper successfully.
 - **pD** - proportion of reads that map to the allele D
 - **pC** - proportion of reads that map to the allele C
 - **pF** - proportion of reads that map to the allele F
+- **Most Prevalent** - Most prevalent *ivr* type in the sample
+- **gt0.5** - *ivr* type with a proportion greater than 0.5 (or whatever is set by `--greaterThan`)
 
 
 #### References
