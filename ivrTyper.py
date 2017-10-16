@@ -13,7 +13,7 @@ import modules.download as download
 import shutil
 
 
-version = '0.6.7'
+version = '0.6.8'
 
 def getListIDs(workdir, fileListIDs, taxon_name):
     searched_fastq_files = False
@@ -60,8 +60,13 @@ def ivrTyper(args, time):
 
     asperaKey = os.path.abspath(args.asperaKey.name) if args.asperaKey is not None else None
 
-    #load reads file paths
-    sample_data, searched_fastq_files = getListIDs(workdir, args.listIDs.name if args.listIDs is not None else None,
+    if args.read1 is not None and args.read2 is not None:
+        sample_data = {}
+        sample_data[os.path.dirname(os.path.abspath(args.read1)).split('/')[-1]] = [os.path.abspath(args.read1), os.path.abspath(args.read2)]
+        searched_fastq_files = True
+    else:
+        #load reads file paths
+        sample_data, searched_fastq_files = getListIDs(workdir, args.listIDs.name if args.listIDs is not None else None,
                                                args.taxon)
 
     samples_total_number = len(sample_data)
@@ -120,6 +125,12 @@ def main():
                                          'per sample (fastq.gz or fq.gz and pair-end direction coded as _R1_001 / '
                                          '_R2_001 or _1 / _2) or to be downloaded',
                                          required=True)
+    parser_optional_general.add_argument('-1', '--read1', metavar='sample_1.fastq.gz',
+                                         help='Forward read file (fastq.gz or fq.gz and pair-end direction coded as _R1_001 / '
+                                         '_R2_001 or _1 / _2)')
+    parser_optional_general.add_argument('-2', '--read2', metavar='sample_2.fastq.gz',
+                                         help='Forward read file (fastq.gz or fq.gz and pair-end direction coded as _R1_001 / '
+                                         '_R2_001 or _1 / _2)')
     parser_optional_general.add_argument('-j', '--threads', type=int, metavar='N', help='Number of threads to use',
                                          required=False, default=1)
     parser_optional_general.add_argument('-u', '--skipProvidedSoftware', action='store_true', help='Do not use provided '
@@ -178,6 +189,8 @@ def main():
             parser.error('A directory to store the output should be provided to --workdir.')
     if args.platformModel is not None and args.instrumentPlatform is not 'ILLUMINA':
         parser.error("To use the --platformModel option, the --instrumentPlatform must be set as 'ILLUMINA'")
+    if (args.read1 is None and args.read2 is not None) or (args.read2 is None and args.read1 is not None):
+        parser.error("Both forward and reverse reads must be provided to --read1 and --read2.")
 
     general_start_time = time.time()
     time_str = time.strftime("%Y%m%d-%H%M%S")
