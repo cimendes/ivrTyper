@@ -6,12 +6,24 @@ import shutil
 
 
 def writeReport(workdir, sample, time, module1_reads, module2_reads, proportions, threshold, minCoverage,
-                proportionCutOff, reportFile):
+                proportionCutOff, reportFile, failedSample=False):
 
     fname = os.path.join(workdir, "report_" + time + ".csv")
 
     if reportFile is not None:
         fname = reportFile.name
+
+    if failedSample:
+        toWrite = [sample] + module1_reads + module2_reads + ['NA'] + ['NA - Failed Sample'] + ['NA']
+        if os.path.isfile(fname):
+            with open(fname, "a") as report:
+                report.write(','.join(toWrite) + '\n')
+        else:
+            with open(fname, "w") as report:
+                report.write("Sample,1.1,1.2,2.1,2.2,2.3,pA,pB,pE,pD,pC,pF,Most Prevalent, gt" + str(threshold) + "\n")
+
+                report.write(','.join(toWrite) + '\n')
+        return
 
     alleles=['A','B','E','D','C','F']
 
@@ -417,7 +429,7 @@ def alignSamples(sampleName, sampleFiles, reference, threads, workdir, script_pa
                                 proportionCutOff, reportFile)
     else:
         writeReport(workdir, sampleName, time, ['NA']*2, ['NA']*3, ['NA']*6, greaterThan, minCoverage,
-                    proportionCutOff, reportFile)
+                    proportionCutOff, reportFile, True)
 
     if not keepFiles:
         #TODO - this is STILL not removing /tmp/ folder in windows
