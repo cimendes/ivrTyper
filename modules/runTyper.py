@@ -58,7 +58,7 @@ def writeReport(workdir, sample, time, module1_reads, module2_reads, proportions
     else:
         classifier = alleles[proportions.index(str(maxP))]
 
-    gt_allele='NT' if classifier == 'NT' else 'NA'
+    gt_allele='NT' if 'NT' in classifier else 'NA'
     if gt_t != 0:
         alleles_gt = []
         start = 0

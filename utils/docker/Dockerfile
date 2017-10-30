@@ -16,9 +16,6 @@ RUN git clone https://github.com/cimendes/ivrTyper.git
 ENV PATH="/NGStools/ivrTyper:${PATH}"
 ENV PATH="/NGStools/ivrTyper/utils:${PATH}"
 #fixing permissions for ivrTyper executables
-RUN chmod +x /NGStools/ivrTyper/src/bcftools-1.3.1/bin/* && chmod +x /NGStools/ivrTyper/src/bowtie2-2.2.9/* && chmod +x /NGStools/ivrTyper/src/samtools-1.3.1/bin/*
-
-# Clean
-RUN apt-get remove -y git && apt-get autoclean -y
+RUN chmod +x /NGStools/ivrTyper/src/bowtie2-2.2.9/* && chmod +x /NGStools/ivrTyper/src/samtools-1.3.1/bin/*
 
 WORKDIR /data/
