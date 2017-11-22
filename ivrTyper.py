@@ -13,7 +13,7 @@ import modules.download as download
 import shutil
 
 
-version = '0.6.8.1'
+version = '0.6.8.2'
 
 def getListIDs(workdir, fileListIDs, taxon_name):
     searched_fastq_files = False

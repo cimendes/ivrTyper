@@ -44,7 +44,7 @@ def writeReport(workdir, sample, time, module1_reads, module2_reads, proportions
             if 'NA' not in module2_reads and all(int(i) < minCoverage for i in module2_reads):
                 module1='1.1' if int(module1_reads[0])>int(module1_reads[1]) else '1.2'
                 classifier = 'NT - module 2 absent with %s module' % (module1)
-            elif all(int(i) > minCoverage for i in module1_reads) and all(i == 'NA' for i in module2_reads):
+            elif all(int(i) >= minCoverage for i in module1_reads) and all(i == 'NA' for i in module2_reads):
                 classifier = 'NT - inconclusive module 1 '
 
     elif proportions.count(str(maxP)) > 1:
