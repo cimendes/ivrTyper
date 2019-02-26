@@ -1,11 +1,14 @@
+#!/usr/bin/env python3
+
 import shlex
-import os, sys
+import os
+import sys
 import subprocess
 from threading import Timer
 import shutil
 import pickle
-import functools
 
+version = '1.0'
 
 class bcolors:
     #The entire table of ANSI color codes - https://gist.github.com/chrisopedia/8754917
@@ -132,18 +135,18 @@ def setPATHvariable(doNotUseProvidedSoftware, script_path):
 
     # Print PATH variable
     print(bcolors.BOLD + '\n' + 'PATH variable:' + bcolors.ENDC)
-    print os.environ['PATH']
-    print '\n'
+    print(os.environ['PATH'])
+    print('\n')
 
 
 def runCommandPopenCommunicate(command, shell_True, timeout_sec_None, print_comand_True):
     run_successfully = False
-    if not isinstance(command, basestring):
+    if not isinstance(command, str):
         command = ' '.join(command)
     command = shlex.split(command)
 
     if print_comand_True:
-        print 'Running: ' + ' '.join(command)
+        print('Running: ' + ' '.join(command))
 
     if shell_True:
         command = ' '.join(command)
@@ -165,18 +168,18 @@ def runCommandPopenCommunicate(command, shell_True, timeout_sec_None, print_coma
         run_successfully = True
     else:
         if not print_comand_True and not_killed_by_timer:
-            print 'Running: ' + str(command)
+            print('Running: ' + str(command))
         if len(stdout) > 0:
-            print 'STDOUT'
-            print stdout.decode("utf-8")
+            print('STDOUT')
+            print(stdout.decode("utf-8"))
         if len(stderr) > 0:
-            print 'STDERR'
-            print stderr.decode("utf-8")
+            print('STDERR')
+            print(stderr.decode("utf-8"))
     return run_successfully, stdout, stderr
 
 
 def kill_subprocess_Popen(subprocess_Popen, command):
-    print 'Command run out of time: ' + str(command)
+    print('Command run out of time: ' + str(command))
     subprocess_Popen.kill()
 
 
@@ -197,17 +200,6 @@ class Logger(object):
 
     def getLogFile(self):
         return self.logfile
-
-
-def trace_unhandled_exceptions(func):
-    @functools.wraps(func)
-    def wrapped_func(*args, **kwargs):
-        try:
-            func(*args, **kwargs)
-        except:
-            print 'Exception in ' + func.__name__
-            traceback.print_exc()
-    return wrapped_func
 
 
 def rchop(string, ending):

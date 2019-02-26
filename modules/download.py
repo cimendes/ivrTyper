@@ -1,11 +1,16 @@
-#Copyright (C) 2016 Miguel Machado <mpmachado@medicina.ulisboa.pt>
-#Adapted from https://github.com/B-UMMI/ReMatCh/blob/master/rematch.py
+#!/usr/bin/env python3
 
-import utils
+# Adapted from https://github.com/B-UMMI/ReMatCh/blob/master/rematch.py
+
+import modules.ivr_utils as utils
 import os.path
 import multiprocessing
 import sys
 import time
+import urllib.request
+
+
+version = '1.0'
 
 
 def getReadRunInfo(ena_id):
@@ -13,16 +18,14 @@ def getReadRunInfo(ena_id):
 
     url = 'http://www.ebi.ac.uk/ena/data/warehouse/filereport?accession=' + ena_id + '&result=read_run'
 
-    # print url #DEBUG - it exists... INTERNET IS NEEDED YOU STUPID
-
     readRunInfo = None
     try:
-        url = urllib.urlopen(url)
+        url = urllib.request.urlopen(url)
         readRunInfo = url.read().splitlines()
         if len(readRunInfo) <= 1:
             readRunInfo = None
     except Exception as error:
-        print error
+        print(error)
 
     return readRunInfo
 
@@ -41,7 +44,7 @@ def getDownloadInformation(readRunInfo):
                 if len(info_line[i]) > 0:
                     files_path = info_line[i].split(';')
                     if len(files_path) > 2:
-                        print 'WARNING: Were found more files than expected in ' + header[1] + ' download links!'
+                        print('WARNING: Were found more files than expected in ' + header[1] + ' download links!')
                     if downloadInformation[header[0]] is None:
                         downloadInformation[header[0]] = {}
                     downloadInformation[header[0]][header[1]] = files_path
@@ -78,7 +81,6 @@ def getSequencingInformation(readRunInfo):
     return sequencingInformation
 
 
-@utils.trace_unhandled_exceptions
 def downloadWithAspera(aspera_file_path, asperaKey, outdir, pickle_prefix):
     command = ['ascp', '-QT', '-l', '300m', '-P33001', '-i', asperaKey, str('era-fasp@' + aspera_file_path), outdir]
     run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, 3600, True)
@@ -86,7 +88,6 @@ def downloadWithAspera(aspera_file_path, asperaKey, outdir, pickle_prefix):
     utils.saveVariableToPickle(run_successfully, outdir, str(pickle_prefix + '.' + aspera_file_path.rsplit('/', 1)[1]))
 
 
-@utils.trace_unhandled_exceptions
 def downloadWithFtp(ftp_file_path, outdir, pickle_prefix):
     file_download = ftp_file_path.rsplit('/', 1)[1]
     command = ['wget', ftp_file_path, '-O', os.path.join(outdir, file_download)]
@@ -206,7 +207,6 @@ def alignmentToFastq(alignment_file, outdir, threads, pair_end_type):
 
 
 def formartFastqHeaders(in_fastq_1, in_fastq_2):
-    import itertools
 
     out_fastq_1 = in_fastq_1 + '.temp'
     out_fastq_2 = in_fastq_2 + '.temp'
@@ -217,7 +217,7 @@ def formartFastqHeaders(in_fastq_1, in_fastq_2):
         plus_line = True
         quality_line = True
         number_reads = 0
-        for in_1, in_2 in itertools.izip(reader_in_fastq_1, reader_in_fastq_2):
+        for in_1, in_2 in zip(reader_in_fastq_1, reader_in_fastq_2):
             if len(in_1) > 0:
                 in_1 = in_1.splitlines()[0]
                 in_2 = in_2.splitlines()[0]
@@ -252,7 +252,6 @@ def formartFastqHeaders(in_fastq_1, in_fastq_2):
     return number_reads, outfiles
 
 
-@utils.trace_unhandled_exceptions
 def gzipFiles(file_2_compress, pickle_prefix, outdir):
     out_file = None
     if file_2_compress.endswith('.temp'):
@@ -358,7 +357,7 @@ def rename_move_files(list_files, new_name, outdir, download_paired_type):
             if not temp_name.endswith(('_R1_001.f', '_R2_001.f')):
                 list_new_files[i] = os.path.join(outdir, new_name + '.fq.gz')
                 if temp_name.endswith(('_1.f', '_2.f')):
-                    print 'WARNING: possible single-end file conflict with pair-end (' + list_files[i] + ')!'
+                    print('WARNING: possible single-end file conflict with pair-end (' + list_files[i] + ')!')
 
     if len(list_new_files) == 2 and download_paired_type.lower() == 'paired':
         run_successfully = True
@@ -375,7 +374,7 @@ def rename_move_files(list_files, new_name, outdir, download_paired_type):
                     os.rename(list_files[i], list_new_files[i])
             list_new_files = list_new_files.values()
         except Exception as e:
-            print e
+            print(e)
             run_successfully = False
 
     if not run_successfully:
@@ -404,15 +403,15 @@ def runDownload(ena_id, download_paired_type, asperaKey, outdir, download_cram_b
         sequencingInformation['date_download'] = time.strftime("%Y-%m-%d")
 
         if instrument_platform.lower() == 'all' or (
-                sequencingInformation['instrument_platform'] is not None and sequencingInformation[
-            'instrument_platform'].lower() == instrument_platform.lower()):
+                sequencingInformation['instrument_platform'] is not None and
+                sequencingInformation['instrument_platform'].lower() == instrument_platform.lower()):
             if download_paired_type.lower() == 'both' or (
-                    sequencingInformation['library_layout'] is not None and sequencingInformation[
-                'library_layout'].lower() == download_paired_type.lower()):
-                if instrument_model is None or instrument_model.lower() in sequencingInformation[
-                    'instrument_model'].lower():
-                    if library_source is None or library_source.lower() == sequencingInformation[
-                    'library_source'].lower():
+                    sequencingInformation['library_layout'] is not None and sequencingInformation['library_layout'].
+                    lower() == download_paired_type.lower()):
+                if instrument_model is None or instrument_model.lower() in sequencingInformation['instrument_model'].\
+                        lower():
+                    if library_source is None or library_source.lower() == sequencingInformation['library_source'].\
+                            lower():
                         run_successfully, cram_index_run_successfully = downloadFiles(downloadInformation, asperaKey,
                                                                                       download_dir, download_cram_bam_True)
                         if run_successfully:

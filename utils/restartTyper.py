@@ -1,15 +1,15 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
 import argparse
 import subprocess
 import time
 
-version = '1.0'
+version = '2.0'
 
 
 def runTyper(args):
-    print '\n' + '> Restarting ivrTyper' + '\n'
+    print('\n' + '> Restarting ivrTyper' + '\n')
 
     workdir = os.path.abspath(args.workdir)
     if not os.path.isdir(workdir):
@@ -17,9 +17,7 @@ def runTyper(args):
 
     initialWorkdir = os.path.abspath(args.initialWorkdir)
 
-
     files_required = get_files_required(initialWorkdir)
-
 
     samples_run = get_samples_run(files_required['report']['file'])
 
@@ -35,8 +33,8 @@ def runTyper(args):
 
     samples_to_run = list(set(total_samples) - set(samples_run))
 
-    print str(len(samples_to_run)) + ' samples out of ' + str(
-        len(total_samples)) + ' will be analysed by ivrTyper' + '\n'
+    print(str(len(samples_to_run)) + ' samples out of ' + str(
+        len(total_samples)) + ' will be analysed by ivrTyper' + '\n')
 
     if list_ids is not None or taxon:
         samples_to_run_file = write_samples_to_run(samples_to_run, workdir)
@@ -48,11 +46,11 @@ def runTyper(args):
     if list_ids is not None or taxon:
         command.extend(['-l', samples_to_run_file])
 
-    print 'ivrTyper will start in 5 seconds...'
+    print('ivTyper will start in 5 seconds...')
     time.sleep(5)
 
     os.chdir(initial_present_directory)
-    print command
+    print(command)
     subprocess.call(command[1:])
 
 
@@ -66,7 +64,7 @@ def write_samples_to_run(samples_to_run, workdir):
 
 def get_files_required(initialWorkdir):
     files_required = {'report': {'extension': 'csv'}, 'run': {'extension': 'log'},
-                     'IDs_list.seqFromWebTaxon': {'extension': 'tab'}}
+                      'IDs_list.seqFromWebTaxon': {'extension': 'tab'}}
 
     files = sorted([f for f in os.listdir(initialWorkdir) if
                     not f.startswith('.') and os.path.isfile(os.path.join(initialWorkdir, f))])
@@ -90,7 +88,7 @@ def get_samples_run(sample_report_file):
     with open(sample_report_file, 'rtU') as reader:
         for line in reader:
             sample_info = line.split(',')[0]
-            if len(sample_info) > 0: #line is not empty
+            if len(sample_info) > 0: # line is not empty
                 if not line.startswith('Sample') and sample_info not in samples_run:
                     samples_run.append(sample_info)
 
@@ -240,7 +238,6 @@ def main():
                                          default='.')
     parser_optional_general.add_argument('-j', '--threads', type=int, metavar='N',
                                          help='New number of threads to use instead', required=False)
-
 
     args = parser.parse_args()
 

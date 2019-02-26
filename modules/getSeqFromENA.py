@@ -1,13 +1,18 @@
-#Copyright (C) 2016 Miguel Machado <mpmachado@medicina.ulisboa.pt>
-#Adapted from https://github.com/B-UMMI/ReMatCh/blob/master/rematch.py
+#!/usr/bin/env python3
 
-import urllib2
+# Adapted from https://github.com/B-UMMI/ReMatCh/blob/master/rematch.py
+
+from urllib.request import urlopen
 import sys
-import urllib
+import urllib.parse
 import xml.etree.ElementTree as ET
 import time
-import utils
+import modules.ivr_utils as utils
 import os
+
+
+version = '1.0'
+
 
 def getReadsFiles(workdir):
 
@@ -21,19 +26,18 @@ def getReadsFiles(workdir):
             sample_file_reverse = None
 
             for file in sample_files:
-                if file.endswith('_R1_001.fastq.gz') or file.endswith('_1.fastq.gz') or file.endswith(
-                   '_R1_001.fq.gz') or file.endswith('_1.fq.gz'):
+                if file.endswith('_R1_001.fastq.gz') or file.endswith('_1.fastq.gz') or \
+                        file.endswith('R1_001.fq.gz') or file.endswith('_1.fq.gz'):
                     sample_file_foward = os.path.join(workdir, sample, file)
-                    # print sample_file_foward
-                elif file.endswith('_R1_002.fastq.gz') or file.endswith('_2.fastq.gz') or file.endswith(
-                    '_R1_002.fq.gz') or file.endswith('_2.fq.gz'):
-                    sample_file_reverse = os.path.join(workdir, sample, file)
-                    # print sample_file_reverse
-            if sample_file_foward == None or sample_file_reverse == None:
-                print (utils.bcolors.WARNING + 'WARNING: No files found for ' + sample + utils.bcolors.ENDC)
-            else:
-                sample_data[sample] = [sample_file_foward,sample_file_reverse]
 
+                elif file.endswith('_R1_002.fastq.gz') or file.endswith('_2.fastq.gz') or \
+                        file.endswith('_R1_002.fq.gz') or file.endswith('_2.fq.gz'):
+                    sample_file_reverse = os.path.join(workdir, sample, file)
+
+            if sample_file_foward is None or sample_file_reverse is None:
+                print(utils.bcolors.WARNING + 'WARNING: No files found for ' + sample + utils.bcolors.ENDC)
+            else:
+                sample_data[sample] = [sample_file_foward, sample_file_reverse]
 
     return sample_data
 
@@ -69,31 +73,31 @@ def getTaxonRunIDs(taxon_name, outputfile):
 
 
 def runSeqFromWebTaxon(taxonname, outputfile, getmachine, getOmicsDataType, getLibraryType, print_True):
-    print '\n' + 'Searching RunIDs for ' + taxonname
+    print('\n' + 'Searching RunIDs for ' + taxonname)
 
-    taxonname = urllib.quote(taxonname)
+    taxonname = urllib.parse.quote(taxonname)
     url = "http://www.ebi.ac.uk/ena/data/view/Taxon%3A" + taxonname + "&display=xml"
     try:
-        content = urllib2.urlopen(url)
+        content = urlopen(url)
         xml = content.read()
         tree = ET.fromstring(xml)
         taxonid = ''
     except:
-        print "Ooops!There might be a problem with the ena service, try later or check if the xml is well formated at " + url
+        print("Ooops!There might be a problem with the ena service, try later or check if the xml is well formated at " + url)
         raise
     for child in tree:
         taxonid = child.get('taxId')
     if (taxonid):
-        print "\n" + "Taxon ID found: " + taxonid
+        print("\n" + "Taxon ID found: " + taxonid)
         url = "http://www.ebi.ac.uk/ena/data/warehouse/search?query=%22tax_tree%28" + taxonid + "%29%22&result=read_run&display=xml"
 
-        content = urllib2.urlopen(url)
+        content = urlopen(url)
         xml = content.read()
         tree = ET.fromstring(xml)
 
         runid = ''
         n = 0
-        with open(outputfile, "wb") as f:
+        with open(outputfile, "w") as f:
             f.write('#' + str(time.strftime("%d/%m/%Y")) + "\n")
             model = ''
             prjid = ''
@@ -110,7 +114,7 @@ def runSeqFromWebTaxon(taxonname, outputfile, getmachine, getOmicsDataType, getL
                         if child2.tag == 'EXPERIMENT_REF':
                             expid = child2.get('accession')
                             url2 = "http://www.ebi.ac.uk/ena/data/view/" + expid + "&display=xml"
-                            content = urllib2.urlopen(url2)
+                            content = urlopen(url2)
                             xml = content.read()
                             tree2 = ET.fromstring(xml)
                             try:
@@ -128,9 +132,11 @@ def runSeqFromWebTaxon(taxonname, outputfile, getmachine, getOmicsDataType, getL
                                                 for child5 in child4:
                                                     if child5.tag == 'LIBRARY_DESCRIPTOR':
                                                         for child6 in child5:
-                                                            if child6.tag == 'LIBRARY_SOURCE' and getOmicsDataType is True:
+                                                            if child6.tag == 'LIBRARY_SOURCE' and \
+                                                                    getOmicsDataType is True:
                                                                 omics = child6.text
-                                                            elif child6.tag == 'LIBRARY_LAYOUT' and getLibraryType is True:
+                                                            elif child6.tag == 'LIBRARY_LAYOUT' and \
+                                                                    getLibraryType is True:
                                                                 libraryType = child6[0].tag
                             except:
                                 model = 'not found'
@@ -138,7 +144,9 @@ def runSeqFromWebTaxon(taxonname, outputfile, getmachine, getOmicsDataType, getL
                                 libraryType = 'not found'
                     f.write(str(runid) + "\t" + model + "\t" + prjid + "\t" + omics + "\t" + libraryType + "\n")
                     if print_True:
-                        line = "run acession %s sequenced on %s from project %s for %s %s end data" % (runid, model, prjid, omics, libraryType)
+                        line = "run acession %s sequenced on %s from project %s for %s %s end data" % \
+                               (runid, model, prjid, omics, libraryType)
+
                         if length_line < len(line):
                             length_line = len(line)
                         sys.stderr.write("\r" + line + str(' ' * (length_line - len(line))))
@@ -146,13 +154,13 @@ def runSeqFromWebTaxon(taxonname, outputfile, getmachine, getOmicsDataType, getL
                 else:
                     f.write(str(runid) + '\t' * 4 + "\n")
                     if print_True:
-                        line = "run acession %s" % (runid, prjid)
+                        line = "run acession %s %s" % (runid, prjid)
                         if length_line < len(line):
                             length_line = len(line)
                         sys.stderr.write("\r" + line + str(' ' * (length_line - len(line))))
                         sys.stderr.flush()
-        print "\n"
-        print "\nfound %s run id's" % n
+        print("\n")
+        print("\nfound %s run id's" % n)
 
     else:
-        print "taxon name does not exist"
+        print("taxon name does not exist")
