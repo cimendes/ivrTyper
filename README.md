@@ -2,7 +2,8 @@
 -- ivr locus allele determination from genomic data --
 
 The *ivr* locus, also known as *cod locus*, is a random six-phase switch in a Type I restriction-modification system.
-It has been shown to be the responsible underlying mechanism for phase-variation in *streptococcus pneumonia* (Manso et al, 2014).
+It has been shown to be the responsible underlying mechanism for phase-variation in *streptococcus pneumonia* 
+(Manso et al, 2014).
 
 There are six possible alleles, identified from A to E:
 
@@ -14,11 +15,18 @@ There are six possible alleles, identified from A to E:
     - Allele F (modules 1.2 and 2.3)
 
 
-Due to the high variation rate and structural rearrangement, this allele cannot reliably be determined using assembly or standard mapping approaches.
-Therefore, we present **ivrTyper**, a standalone tool for the determination of the *ivr locus* allele from paired-end genomic data.
-We've adapted the algorithm described by Lee et al (2017). The reads are mapped to the full *iver locus* and the mates of reads mapping to the reverse strand of the conserved 5' region are extracted for each sample and mapped with bowtie2 to the 1.1 and 1.2 modules. The representative module of the *hsdS* gene is chosen if the number of reads mapping is greater than the `--proportionCutOff` (default is 80%). The 3' allele is determined using the chosen 1.x module as target, and mapping the mates of reads to the module 2.x reference sequences.
+Due to the high variation rate and structural rearrangement, this allele cannot reliably be determined using assembly 
+or standard mapping approaches.
+Therefore, we present **ivrTyper**, a standalone tool for the determination of the *ivr locus* allele from paired-end 
+genomic data.
+We've adapted the algorithm described by Lee et al (2017). The reads are mapped to the full *iver locus* and the mates 
+of reads mapping to the reverse strand of the conserved 5' region are extracted for each sample and mapped with bowtie2 
+to the 1.1 and 1.2 modules. The representative module of the *hsdS* gene is chosen if the number of reads mapping is 
+greater than the `--proportionCutOff` (default is 80%). The 3' allele is determined using the chosen 1.x module as 
+target, and mapping the mates of reads to the module 2.x reference sequences.
 For a module to be considered present it needs to have a number of reads mapped higher than `--minCoverage`.
-The number of mates that map to the 1.x module is obtained though the conserved 5' region. The number of mates mapping to the 2.x module is obtained though the selected 1.x module. The calculation of the proportion takes into consideration the reads mapping to all 2.x possibilities only.
+The number of mates that map to the 1.x module is obtained though the conserved 5' region. The number of mates mapping 
+to the 2.x module is obtained though the selected 1.x module. The calculation of the proportion takes into consideration the reads mapping to all 2.x possibilities only.
 
 
 #### Dependencies
@@ -30,9 +38,10 @@ Required to run analysis:
 - Bowtie2 >= v2.2.9
 - Samtools = v1.3.1
 
-(these three executables are provided, but user's own executables can be used by providing --doNotUseProvidedSoftware option)
-- pysam >= 0.11.2.2 (available though pip)
-- python 2.7
+(these three executables are provided, but user's own executables can be used by providing 
+--doNotUseProvidedSoftware option)
+- pysam >= 0.11.2.2 (available through pip)
+- python 3+
 
 
 #### Installation
@@ -108,7 +117,8 @@ Required to run analysis:
 
 ######  - With Local Samples
 To run ivrTyper in local fastq files, these need to be organized in sample folders.
-It is advisable to use copied fastq files or symbolic links to the original ones. Then provide the directory containing sample folders to `--workdir`. The output report will be stored there.
+It is advisable to use copied fastq files or symbolic links to the original ones. Then provide the directory 
+containing sample folders to `--workdir`. The output report will be stored there.
 ```
   workir/
     sample_1/
@@ -122,14 +132,15 @@ It is advisable to use copied fastq files or symbolic links to the original ones
 `ivrTyper.py --workdir /path/to/data/ --threads 8`
 
 ###### - With specific ENA sequencing data
-To run ivrTyper in a specific set of ENA IDs, provide a file to `--listIDs` containing a list of ENA IDs that will be downloaded. This tool requires the genomic data to be paired-end and from Illumina technology.
+To run ivrTyper in a specific set of ENA IDs, provide a file to `--listIDs` containing a list of ENA IDs that will be 
+downloaded. This tool requires the genomic data to be paired-end and from Illumina technology.
 ReMatCh will store the output files in the `--workdir`.
 `ivrTyper.py --listIDs /path/to/list_IDs.txt --workdir /path/to/output/directory/  --threads 8`
 
 ###### - With ENA sequencing data of *streptococcus pneumoniae* taxon
 To run ivrTyper in all ENA data of a given taxon, provide the taxon name to `--taxon`.
 The ENA Run Accession numbers for the given taxon will be stored in IDs_list.seqFromWebTaxon.tab file.
-Warning - This is option is in development.
+Warning - This option is in development.
 `ivrTyper.py --taxon "Streptococcus pneumoniae" --workdir /path/to/output/directory/  --threads 8`
 
 
@@ -158,12 +169,20 @@ Report for the samples that ran the ivrTyper successfully.
 
 
 #### References
-Lees, J.A., Kremer, P.H.C., Manso, A.S., Croucher, N.J., Ferwerda, B., Serón, M.V., Oggioni, M.R., Parkhill, J., Brouwer, M.C., Ende, A. Van Der, Beek, D. Van De, Bentley, S.D., 2017. Large scale genomic analysis shows no evidence for pathogen adaptation between the blood and cerebrospinal fluid niches during bacterial meningitis. Microb. Genomics 3, 1–12. doi:10.1099/mgen.0.000103
+Lees, J.A., Kremer, P.H.C., Manso, A.S., Croucher, N.J., Ferwerda, B., Serón, M.V., Oggioni, M.R., Parkhill, J., 
+Brouwer, M.C., Ende, A. Van Der, Beek, D. Van De, Bentley, S.D., 2017. Large scale genomic analysis shows no evidence 
+for pathogen adaptation between the blood and cerebrospinal fluid niches during bacterial meningitis. Microb. Genomics 
+3, 1–12. doi:10.1099/mgen.0.000103
 
-Li, J., Li, J.W., Feng, Z., Wang, J., An, H., Liu, Y., Wang, Y., Wang, K., Zhang, X., Miao, Z., Liang, W., Sebra, R., Wang, G., Wang, W.C., Zhang, J.R., 2016. Epigenetic Switch Driven by DNA Inversions Dictates Phase Variation in Streptococcus pneumoniae. PLoS Pathog. 12, 1–36. doi:10.1371/journal.ppat.1005762
+Li, J., Li, J.W., Feng, Z., Wang, J., An, H., Liu, Y., Wang, Y., Wang, K., Zhang, X., Miao, Z., Liang, W., Sebra, R., 
+Wang, G., Wang, W.C., Zhang, J.R., 2016. Epigenetic Switch Driven by DNA Inversions Dictates Phase Variation in 
+Streptococcus pneumoniae. PLoS Pathog. 12, 1–36. doi:10.1371/journal.ppat.1005762
 
-Manso, A.S., Chai, M.H., Atack, J.M., Furi, L., De Ste Croix, M., Haigh, R., Trappetti, C., Ogunniyi, A.D., Shewell, L.K., Boitano, M., Clark, T.A., Korlach, J., Blades, M., Mirkes, E., Gorban, A.N., Paton, J.C., Jennings, M.P., Oggioni, M.R., 2014. A random six-phase switch regulates pneumococcal virulence via global epigenetic changes. Nat. Commun. 5, 5055. doi:10.1038/ncomms6055
+Manso, A.S., Chai, M.H., Atack, J.M., Furi, L., De Ste Croix, M., Haigh, R., Trappetti, C., Ogunniyi, A.D., Shewell, 
+L.K., Boitano, M., Clark, T.A., Korlach, J., Blades, M., Mirkes, E., Gorban, A.N., Paton, J.C., Jennings, M.P., Oggioni,
+ M.R., 2014. A random six-phase switch regulates pneumococcal virulence via global epigenetic changes. Nat. Commun. 5, 
+5055. doi:10.1038/ncomms6055
 
 
 #### Contact
-Catarina Mendes <cimendes@medicina.ulisboa.pt>
+Inês Mendes <cimendes@medicina.ulisboa.pt>
