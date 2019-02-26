@@ -10,8 +10,9 @@ import pickle
 
 version = '1.0'
 
+
 class bcolors:
-    #The entire table of ANSI color codes - https://gist.github.com/chrisopedia/8754917
+    # The entire table of ANSI color codes - https://gist.github.com/chrisopedia/8754917
     BOLD = '\033[1m'
     HEADER = '\033[1;96m'
     OKBLUE = '\033[94m'

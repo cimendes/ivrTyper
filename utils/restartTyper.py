@@ -162,6 +162,7 @@ def getListIDs_fromFile(listIDs_file):
 
 
 def searchFastqFiles(initialWorkdir):
+
     filesExtensions = ['.fastq.gz', '.fq.gz']
     pairEnd_filesSeparation = [['_R1_001.f', '_R2_001.f'], ['_1.f', '_2.f']]
 

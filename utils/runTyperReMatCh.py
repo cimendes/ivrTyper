@@ -5,7 +5,7 @@ import sys
 import inspect
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
-sys.path.insert(0,parentdir)
+sys.path.insert(0, parentdir)
 import time
 import argparse
 import shutil
@@ -115,9 +115,10 @@ def main():
     parser_optional_general.add_argument('-w', '--workdir', type=str, metavar='/path/to/workdir/directory/',
                                          help='Path to the output directory',
                                          required=True)
-    parser_optional_general.add_argument('-l','--listIDs', type=argparse.FileType('r'),
+    parser_optional_general.add_argument('-l', '--listIDs', type=argparse.FileType('r'),
                                                     metavar='/path/to/list_IDs.txt',
-                                                    help='Path to list containing the IDs to be downloaded (one per line)',
+                                                    help='Path to list containing the IDs to be downloaded '
+                                                         '(one per line)',
                                                     required=False, default=None)
     parser_optional_general.add_argument('-j', '--threads', type=int, metavar='N', help='Number of threads to use',
                                          required=False, default=1)

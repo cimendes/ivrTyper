@@ -180,7 +180,7 @@ def sortAlignment(alignment_file, output_file, sortByName_True, threads):
     return run_successfully, output_file
 
 
-def alignmentToFastq(alignment_file, outdir, threads, pair_end_type):
+def alignmentToFastq(alignment_file, threads, pair_end_type):
     fastq_basename = os.path.splitext(alignment_file)[0]
     outfiles = None
     bamFile = fastq_basename + '.temp.bam'
@@ -299,7 +299,7 @@ def compressFiles(fastq_files, outdir, threads):
 
 
 def bamCram_2_fastq(alignment_file, outdir, threads, pair_end_type):
-    run_successfully, fastq_files = alignmentToFastq(alignment_file, outdir, threads, pair_end_type)
+    run_successfully, fastq_files = alignmentToFastq(alignment_file, threads, pair_end_type)
     if run_successfully:
         if pair_end_type.lower() == 'paired':
             number_reads, fastq_files = formartFastqHeaders(fastq_files[0], fastq_files[1])
@@ -396,6 +396,7 @@ def runDownload(ena_id, download_paired_type, asperaKey, outdir, download_cram_b
                              'nominal_length': None, 'read_count': None, 'base_count': None, 'date_download': None}
 
     readRunInfo = getReadRunInfo(ena_id)
+
     if readRunInfo is not None:
         downloadInformation = getDownloadInformation(readRunInfo)
         downloadInformation = check_correct_links(downloadInformation)
@@ -413,16 +414,20 @@ def runDownload(ena_id, download_paired_type, asperaKey, outdir, download_cram_b
                     if library_source is None or library_source.lower() == sequencingInformation['library_source'].\
                             lower():
                         run_successfully, cram_index_run_successfully = downloadFiles(downloadInformation, asperaKey,
-                                                                                      download_dir, download_cram_bam_True)
+                                                                                      download_dir,
+                                                                                      download_cram_bam_True)
                         if run_successfully:
-                            run_successfully, downloaded_files = get_fastq_files(download_dir, cram_index_run_successfully,
+                            run_successfully, downloaded_files = get_fastq_files(download_dir,
+                                                                                 cram_index_run_successfully,
                                                                                  threads,
-                                                                                 sequencingInformation['library_layout'])
+                                                                                 sequencingInformation
+                                                                                 ['library_layout'])
                         if run_successfully and downloaded_files is not None:
                             run_successfully, downloaded_files = rename_move_files(downloaded_files,
-                                                                                   sequencingInformation['run_accession'],
-                                                                                   outdir, sequencingInformation[
-                                                                                       'library_layout'])
+                                                                                   sequencingInformation
+                                                                                   ['run_accession'],
+                                                                                   outdir, sequencingInformation
+                                                                                   ['library_layout'])
 
     utils.removeDirectory(download_dir)
 
