@@ -8,8 +8,8 @@ RUN apt-get update
 RUN apt-get install -y git wget
 
 # -- ivrTyper General Dependencies ---
-RUN apt-get install -y python3
-RUN pip install pysam==0.11.2.2
+RUN apt-get install -y python3-dev python3-pip 
+RUN pip3 install pysam==0.11.2.2
 
 # --- ivrTyper ---
 RUN git clone https://github.com/cimendes/ivrTyper.git
